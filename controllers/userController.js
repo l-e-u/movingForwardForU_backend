@@ -80,6 +80,8 @@ const verifyEmailToken = async (req, res) => {
 
         const user = await User.findById(_id);
 
+        if (!user) throw { user: 'No user found.' };
+
         // when the user forgets password, their email inbox will have a message with link that will route them here to set their password null and unverify them until they set a new password
         if (resetPassword === '1') {
             user.password = null;
@@ -96,23 +98,16 @@ const verifyEmailToken = async (req, res) => {
         return res.status(200).json(user);
     }
     catch (err) {
+        const error = {};
         console.error(err);
 
         // error for tokens over their 1h expiration
-        if (err.name === 'TokenExpiredError') {
-            err.errors = {
-                token:
-                    { message: 'Email token has expired.' }
-            };
+        if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
+            error.token = { message: 'Email token link is invalid.' };
         };
 
-        // 'errors' contains any mongoose model-validation fails, rename to error
-        const { errors: error } = err;
-
-        // if no input errors, then send back the err message as a server error
-        if (!error) {
-            error = {};
-            error.server = { message: err.message };
+        if (err.user) {
+            error.message = err.user;
         };
 
         return res.status(400).json({ error });
