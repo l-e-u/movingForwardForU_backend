@@ -11,6 +11,7 @@ import feeRoutes from './routes/fees.js';
 import jobRoutes from './routes/jobs.js';
 import statusRoutes from './routes/statuses.js';
 import userRoutes from './routes/users.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 const PORT = process.env.PORT;
 const URI = process.env.MONGO_URI;
@@ -24,8 +25,8 @@ app.use(cors());
 app.use(urlencoded({ extended: true }));
 app.use(json());
 app.use((req, res, next) => {
-    console.log(req.path, req.method);
-    next();
+   console.log(req.path, req.method);
+   next();
 });
 
 // routes
@@ -37,16 +38,17 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/statuses', statusRoutes);
 app.use('/api/users', userRoutes);
 
+// error handler
+app.use(errorHandler);
+
 // connect to db
 connectToDatabase(URI)
-    .then(() => {
-        // listen for requests
-        app.listen(PORT, () => {
-            console.log('Server started on port:', PORT);
-        });
-    })
-    .catch((error) => {
-        console.error(error);
-    });
-
-export default app;
+   .then(() => {
+      // listen for requests
+      app.listen(PORT, () => {
+         console.log('Server started on port:', PORT);
+      });
+   })
+   .catch((error) => {
+      console.error(error);
+   });
