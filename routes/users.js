@@ -3,15 +3,15 @@ import { requireAuth } from '../middleware/requireAuth.js';
 
 // controller functions
 import {
-    deleteUser,
-    getUser,
-    getUsers,
-    loginUser,
-    registerUser,
-    sendEmailResetPasswordLink,
-    updateUser,
-    verifyEmailToken,
-    verifyUser,
+   deleteUser,
+   getUser,
+   getUsers,
+   loginUser,
+   registerUser,
+   sendEmailResetPasswordLink,
+   updateUser,
+   verifyEmailToken,
+   verifyUser,
 } from "../controllers/userController.js";
 
 const router = Router();
@@ -19,12 +19,13 @@ const router = Router();
 // login route
 router.post('/login', loginUser);
 
+// send an email to user with link to reset password
 router.post('/resetPassword', sendEmailResetPasswordLink);
 
-// verify email token to ensure the token is valid
+// via the email service adding a new user to verify their email, or a resetting a forgotten password
 router.post('/verify/:emailToken/:resetPassword', verifyEmailToken);
 
-// verify route
+// flags user's email isVerified as true
 router.patch('/verify', verifyUser);
 
 // authenticates user is valid and logged in to access further end points
@@ -43,6 +44,6 @@ router.post('/', registerUser);
 router.delete('/:id', deleteUser);
 
 // UPDATE a user
-router.patch('/:id', updateUser)
+router.patch('/:id', updateUser);
 
 export default router;

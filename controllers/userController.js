@@ -11,8 +11,10 @@ import {
    EmailVerificationError,
    EmptyStringError,
    MalformedTokenError,
+   PasswordNotStrongError,
+   PasswordsDoNotMatch,
    TokenExpiredError,
-   WrongPasswordError
+   WrongPasswordError,
 } from '../utils/errorHandlingUtils.js';
 
 const loginToken = (_id) => {
@@ -23,7 +25,7 @@ const registerToken = (userId) => {
    return JWT.sign(
       { userId },
       process.env.EMAIL_TOKEN_SECURE,
-      { expiresIn: '1d' }
+      { expiresIn: '1h' }
    );
 };
 
@@ -32,122 +34,117 @@ const loginUser = async (req, res, next) => {
    const { authentication } = req.headers;
    const { email, password } = req.body;
 
-   // a valid token means the user has already been authenticated
-   if (authentication) {
-      const key = process.env.SECURE;
-      const token = authentication.split(' ')[1];
+   try {
+      // a valid token means the user has already been authenticated
+      if (authentication) {
+         const key = process.env.SECURE;
+         const token = authentication.split(' ')[1];
 
-      JWT.verify(token, key, async (error, decoded) => {
-         if (error) {
-            if (error.name === 'TokenExpiredError') return next(new TokenExpiredError());
+         JWT.verify(token, key, async (error, decoded) => {
+            if (error) {
+               if (error.name === 'TokenExpiredError') throw new TokenExpiredError();
 
-            return next(new MalformedTokenError());
+               throw new MalformedTokenError();
+            };
+
+            const user = await User.findOne({ _id: decoded });
+
+            return res.status(200).json(user);
+         });
+      }
+      else {
+         // must include an email and password for the user
+         if (!email || !password) throw new EmptyStringError(!email ? 'email' : 'password');
+
+         const user = await User.findOne({ email });
+
+         // throw error if no user is found, wrong password, or user has not verified their email
+         // throw a wrong password error for no user found to not reveal if an email exists
+         if (!user) {
+            console.error(`User not found with email (${email}) sending 'Wrong Password Error' to not reveal existance of user.`);
+
+            throw new WrongPasswordError();
          };
 
-         const user = await User.findOne({ _id: decoded });
+         if (!user.isVerified || !user.password) throw new EmailVerificationError();
 
-         return res.status(200).json(user);
-      });
+         // authenticate by checking password
+         const isAuthenticated = await User.authenticate(email, password);
+         if (!isAuthenticated) throw new WrongPasswordError();
+
+         // create a token
+         const token = loginToken(user._id);
+         return res.status(200).json({ user, token });
+      };
    }
-   else {
-      // must include an email and password for the user
-      if (!email || !password) return next(new EmptyStringError(!email ? 'email' : 'password'));
-
-      // verifies user's credentials
-      const user = await User.authenticate(email, password);
-
-      // throw error if no user is found, wrong password, or user has not verified their email
-      // throw a wrong password error for no user found to not reveal if an email exists
-      if (!user) console.error(`User not found with email (${email}) sending 'Wrong Password Error' to not reveal existance of user.`);
-      if (!user || user.wrongPassword) return next(new WrongPasswordError());
-      if (!user.isVerified) return next(new EmailVerificationError());
-
-      // create a token
-      const token = loginToken(user._id);
-      return res.status(200).json({ user, token });
-   };
+   catch (error) {
+      next(error);
+   }
 };
 
-const verifyEmailToken = async (req, res) => {
+const verifyEmailToken = async (req, res, next) => {
+   const emailKey = process.env.EMAIL_TOKEN_SECURE;
    const { emailToken } = req.params;
    const { resetPassword } = req.params;
 
    try {
-      const { userId: _id } = JWT.verify(emailToken, process.env.EMAIL_TOKEN_SECURE);
+      const { userId } = JWT.verify(emailToken, emailKey);
+      const user = await User.findById(userId);
 
-      const user = await User.findById(_id);
+      if (!user) throw new DocumentNotFoundError('User');
 
-      if (!user) throw { user: 'No user found.' };
-
-      // when the user forgets password, their email inbox will have a message with link that will route them here to set their password null and unverify them until they set a new password
-      if (resetPassword === '1') {
+      // resetting password sets it to null and user becomes unverified. front end will require them to set up password all over again
+      if (resetPassword === 'true') {
          user.password = null;
          user.isVerified = false;
-         await user.save();
+         user.save();
       }
 
-      // when the user or admin updates a user's email, the user is unverified and sent a message to the updated email requesting to verify the email address by clicking on the provided link. When a user verifies, and has a set password, then there's no need to go through the sign up process. then just verify the user.
+      // for new users who are clicking on the link in the email to verify their email address
       if (user.password) {
          user.isVerified = true;
          await user.save();
       };
 
       return res.status(200).json(user);
-   }
-   catch (err) {
-      const error = {};
-      console.error(err);
 
-      // error for tokens over their 1h expiration
-      if (err.name === 'TokenExpiredError' || err.name === 'JsonWebTokenError') {
-         error.token = { message: 'Email token link is invalid.' };
-      };
+   } catch (error) {
+      const { name } = error;
 
-      if (err.user) {
-         error.message = err.user;
-      };
-
-      return res.status(400).json({ error });
+      if (name === 'TokenExpiredError' || name === 'SyntaxError') next(new MalformedTokenError());
+      else if (name === 'JsonWebTokenError') next(new TokenExpiredError());
+      else next(error);
    };
+};
 
-
-}
-
-// set user.isVerified to true and set their password
-const verifyUser = async (req, res) => {
-   const { _id, password, confirmPassword } = req.body;
+const verifyUser = async (req, res, next) => {
+   let { _id, password, confirmPassword } = req.body;
 
    try {
-      const user = await User.changePassword({ _id, password, confirmPassword });
+      // client side handles input verification and this is an extra layer of protection
+      if (!password.trim() || !confirmPassword.trim()) throw new EmptyStringError(!password.trim() ? 'Password' : 'Confirm Password');
+      if (password !== confirmPassword) throw new PasswordsDoNotMatch();
 
+      const user = await User.findById(_id);
+      const result = await user.setEncryptedPassword(password);
+
+      if (result.passwordNotStrong) throw new PasswordNotStrongError();
       user.isVerified = true;
-
       await user.save();
 
       return res.status(200).json(user);
    }
-   catch (err) {
-      console.error(err);
-
-      // 'errors' contains any mongoose model-validation fails
-      const { errors } = err;
-
-      // if no input errors, then send back the err message as a server error
-      if (!errors) {
-         err.errors = {
-            server: { message: err.message }
-         };
-      };
-
-      return res.status(400).json({ error: err.errors });
+   catch (error) {
+      next(error);
    };
 };
 
 // create a new user
-const registerUser = async (req, res) => {
-   const { email, firstName } = req.body;
-
+const registerUser = async (req, res, next) => {
+   let { email, firstName } = req.body;
+   firstName = ''
    try {
+      if (!firstName.trim()) throw new EmptyStringError('firstName', 'First Name', true);
       const user = await User.create({
          ...req.body
       });
@@ -158,20 +155,8 @@ const registerUser = async (req, res) => {
 
       return res.status(200).json(user);
    }
-   catch (err) {
-      console.error(err);
-
-      // 'errors' contains any mongoose model-validation fails
-      const { errors } = err;
-
-      // if no input errors, then send back the err message as a server error
-      if (!errors) {
-         err.errors = {
-            server: { message: err.message }
-         };
-      };
-
-      return res.status(400).json({ error: err.errors });
+   catch (error) {
+      next(error);
    };
 };
 

@@ -11,23 +11,18 @@ import feeRoutes from './routes/fees.js';
 import jobRoutes from './routes/jobs.js';
 import statusRoutes from './routes/statuses.js';
 import userRoutes from './routes/users.js';
+
+// middleware
 import { errorHandler } from './middleware/errorHandler.js';
 
 const PORT = process.env.PORT;
 const URI = process.env.MONGO_URI;
 
-// express app
 const app = express();
+
 app.use(cors());
-
-
-// middleware
 app.use(urlencoded({ extended: true }));
 app.use(json());
-app.use((req, res, next) => {
-   console.log(req.path, req.method);
-   next();
-});
 
 // routes
 app.use('/api/archives', archiveRoutes);
@@ -38,7 +33,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/statuses', statusRoutes);
 app.use('/api/users', userRoutes);
 
-// error handler
+// gobal handler
 app.use(errorHandler);
 
 // connect to db

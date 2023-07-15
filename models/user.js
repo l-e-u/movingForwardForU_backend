@@ -11,7 +11,7 @@ const userSchema = new Schema({
    firstName: {
       type: String,
       trim: true,
-      required: [true, 'Cannot be empty.']
+      required: true,
    },
    comments: {
       type: String,
@@ -22,7 +22,7 @@ const userSchema = new Schema({
       type: String,
       lowercase: true,
       unique: true,
-      required: [true, 'Cannot be empty.'],
+      required: true,
       match: [/\S+@\S+\.\S+/, 'is invalid'],
    },
    //Our password is hashed with bcrypt
@@ -41,7 +41,7 @@ const userSchema = new Schema({
    lastName: {
       type: String,
       trim: true,
-      required: [true, 'Cannot be empty.']
+      required: true
    },
 }, {
    timestamps: true,
@@ -89,19 +89,29 @@ userSchema.statics.changePassword = async function ({ _id, password, confirmPass
    return user;
 };
 
-// return user if password is correct
-// return null if user is not found
-// return boolean if password is incorrect
+// search for the user since model returns a json without password for security reasons
 userSchema.statics.authenticate = async function (email, password) {
    const user = await this.findOne({ email });
-   if (!user) return null;
-
    const match = await bcrypt.compare(password, user.password);
-   if (!match) return { wrongPassword: true };
-
-   return user;
+   if (!match) return false;
+   return true;
 };
 
 const User = Model('User', userSchema);
+
+// updates user document password
+User.prototype.setEncryptedPassword = async function (newPassword) {
+   if (!validator.isStrongPassword(newPassword)) {
+      console.log("passed test", newPassword)
+      return { error: true, passwordNotStrong: true };
+   };
+
+   const salt = await bcrypt.genSalt(10);
+   const hash = await bcrypt.hash(newPassword, salt);
+
+   this.password = hash;
+
+   return { error: false };
+};
 
 export default User;

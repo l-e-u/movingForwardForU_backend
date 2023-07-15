@@ -1,6 +1,21 @@
 export const errorHandler = (err, req, res, next) => {
-   console.log('PATH:', req.path);
-   console.error('ERROR -->>', err);
+   let { statusCode } = err;
 
-   return res.status(err.statusCode).json({ error: err });
+   const errorDetails = `
+   <<-- ERROR -->>
+   Endpoint: ${req.method} ${req.path}
+   Name: ${err.name}
+   Message: ${err.message}
+   `;
+
+   console.info(errorDetails)
+   console.error(err)
+
+   // this is for unhandled exceptions, check console for details
+   if (!statusCode) {
+      statusCode = 500;
+      err.message = 'An unknown error has occured.'
+   };
+
+   return res.status(statusCode).json({ error: err });
 };

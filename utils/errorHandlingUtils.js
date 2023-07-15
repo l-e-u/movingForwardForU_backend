@@ -1,12 +1,24 @@
 // handles errors by setting name, message, and status code
 
 class UserInputError extends Error {
-   constructor(propertyName) {
+   constructor(propertyName, displayName, useDisplayName = false) {
       super();
+      let property;
+      let field;
 
-      let property = propertyName.toLowerCase();
-      this[property] = true;
-      this.field = property.charAt(0).toUpperCase() + property.substring(1);
+      // sometimes the property name of a model is camelCased, if so, don't format the property name and use the display name
+      if (useDisplayName) {
+         property = propertyName;
+         field = displayName;
+         this[propertyName] = true;
+      }
+      else {
+         property = propertyName.toLowerCase();
+         field = property.charAt(0).toUpperCase() + property.substring(1);
+         this[property] = true;
+      };
+
+      this.field = field;
       this.statusCode = 400;
 
       if (this instanceof EmptyStringError) {
@@ -44,22 +56,35 @@ class LoginError extends Error {
    }
 };
 
-export class DocumentNotFoundError extends Error {
-   constructor(modelName) {
+export class WrongPasswordError extends LoginError { };
+export class EmailVerificationError extends LoginError { };
+
+class NewPasswordError extends Error {
+   constructor() {
       super();
-      this.model = modelName.charAt(0).toUpperCase() + modelName.substring(1).toLowerCase();
-      this.statusCode = 404;
-      this.name = `${this.model} Not Found`;
-      this.message = `${this.model} does not exist.`;
+      this.password = true;
+      this.confirmPassword = true;
+      this.statusCode = 401;
+
+      if (this instanceof PasswordsDoNotMatch) {
+         this.name = 'Passwords Do Not Match';
+         this.message = 'Passwords do not match.';
+      };
+
+      if (this instanceof PasswordNotStrongError) {
+         this.name = 'Password Not Strong';
+         this.message = 'Password is not strong.';
+      };
    }
 };
 
-export class WrongPasswordError extends LoginError { }
-export class EmailVerificationError extends LoginError { };
+export class PasswordsDoNotMatch extends NewPasswordError { };
+export class PasswordNotStrongError extends NewPasswordError { };
 
 class JSONWebTokenError extends Error {
    constructor() {
       super();
+      this.token = true;
 
       if (this instanceof TokenExpiredError) {
          this.name = 'Login Expired';
@@ -77,3 +102,13 @@ class JSONWebTokenError extends Error {
 
 export class TokenExpiredError extends JSONWebTokenError { };
 export class MalformedTokenError extends JSONWebTokenError { };
+
+export class DocumentNotFoundError extends Error {
+   constructor(modelName) {
+      super();
+      this.model = modelName.charAt(0).toUpperCase() + modelName.substring(1).toLowerCase();
+      this.statusCode = 404;
+      this.name = `${this.model} Not Found`;
+      this.message = `${this.model} does not exist.`;
+   }
+};
