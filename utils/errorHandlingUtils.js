@@ -112,3 +112,12 @@ export class DocumentNotFoundError extends Error {
       this.message = `${this.model} does not exist.`;
    }
 };
+
+export class InvalidMongoDBObjectID extends Error {
+   constructor() {
+      super();
+      this.statusCode = 404;
+      this.name = 'Invalid MongoDB ObjectID';
+      this.message = 'Document not found due to invalid ObjectID';
+   }
+};
