@@ -30,9 +30,15 @@ class UserInputError extends Error {
          this.name = 'No Selection';
          this.message = `Select a ${this.field}.`;
       };
+
+      if (this instanceof NaNError) {
+         this.name = 'NaN';
+         this.message = `${this.field}. is not a number.`;
+      };
    }
 };
 
+export class NaNError extends UserInputError { }
 export class EmptyStringError extends UserInputError { };
 export class NoSelectionError extends UserInputError { };
 

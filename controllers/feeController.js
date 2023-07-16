@@ -3,7 +3,9 @@ import Fee from '../models/fee.js';
 
 import {
    DocumentNotFoundError,
-   InvalidMongoDBObjectID
+   EmptyStringError,
+   InvalidMongoDBObjectID,
+   NaNError,
 } from '../utils/errorHandlingUtils.js';
 
 // GET all fees
@@ -33,8 +35,12 @@ const getFee = async (req, res, next) => {
 // POST create a new fee
 const createFee = async (req, res, next) => {
    const { _id: user_id } = req.user;
+   const { amount, description, name } = req.body;
 
    try {
+      if (!amount || isNaN(amount)) throw new NaNError('Amount');
+      if (!description.trim() || !name.trim()) EmptyStringError(!description.trim() ? 'Description' : 'Name');
+
       const fee = await Fee.create({ ...req.body, createdBy: user_id });
       await fee.populate('createdBy');
 
@@ -50,7 +56,6 @@ const deleteFee = async (req, res, next) => {
       if (!mongoose.Types.ObjectId.isValid(id)) throw new InvalidMongoDBObjectID();
 
       const fee = await Fee.findByIdAndDelete({ _id: id });
-
       if (!fee) throw new DocumentNotFoundError('Fee');
 
       res.status(200).json(fee);
