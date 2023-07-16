@@ -39,7 +39,7 @@ const createFee = async (req, res, next) => {
 
    try {
       if (!amount || isNaN(amount)) throw new NaNError('Amount');
-      if (!description.trim() || !name.trim()) EmptyStringError(!description.trim() ? 'Description' : 'Name');
+      if (!description.trim() || !name.trim()) throw new EmptyStringError(!description.trim() ? 'Description' : 'Name');
 
       const fee = await Fee.create({ ...req.body, createdBy: user_id });
       await fee.populate('createdBy');

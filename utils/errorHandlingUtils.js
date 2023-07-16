@@ -38,7 +38,7 @@ class UserInputError extends Error {
    }
 };
 
-export class NaNError extends UserInputError { }
+export class NaNError extends UserInputError { };
 export class EmptyStringError extends UserInputError { };
 export class NoSelectionError extends UserInputError { };
 
@@ -125,5 +125,15 @@ export class InvalidMongoDBObjectID extends Error {
       this.statusCode = 404;
       this.name = 'Invalid MongoDB ObjectID';
       this.message = 'Document not found due to invalid ObjectID';
+   }
+};
+
+export class InvalidValueError extends Error {
+   constructor({ message, property }) {
+      super();
+      this.statusCode = 404;
+      this.name = 'Invalid Value';
+      this.property = property;
+      this.message = message;
    }
 };
