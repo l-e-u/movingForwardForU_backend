@@ -4,6 +4,7 @@ import Fee from '../models/fee.js';
 import {
    DocumentNotFoundError,
    EmptyStringError,
+   IsUniqueError,
    InvalidMongoDBObjectID,
    NaNError,
 } from '../utils/errorHandlingUtils.js';
@@ -45,7 +46,26 @@ const createFee = async (req, res, next) => {
       await fee.populate('createdBy');
 
       return res.status(200).json(fee);
-   } catch (error) { next(error) };
+   } catch (error) {
+      const { errors } = error;
+
+      if (errors) {
+         const key = Object.keys(errors)[0];
+
+         if (errors[key].kind === 'unique') {
+            next(
+               new IsUniqueError({
+                  mongoDBValidationError: {
+                     ...errors[key],
+                     message: errors._message
+                  }
+               })
+            );
+         };
+      };
+
+      next(error)
+   };
 };
 
 // DELETE one fee
@@ -81,7 +101,26 @@ const updateFee = async (req, res, next) => {
       if (!fee) throw new DocumentNotFoundError('Fee');
 
       return res.status(200).json(fee);
-   } catch (error) { next(error) };
+   } catch (error) {
+      const { errors } = error;
+
+      if (errors) {
+         const key = Object.keys(errors)[0];
+
+         if (errors[key].kind === 'unique') {
+            next(
+               new IsUniqueError({
+                  mongoDBValidationError: {
+                     ...errors[key],
+                     message: errors._message
+                  }
+               })
+            );
+         };
+      };
+
+      next(error);
+   };
 };
 
 export {

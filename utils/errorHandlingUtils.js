@@ -33,7 +33,7 @@ class UserInputError extends Error {
 
       if (this instanceof NaNError) {
          this.name = 'NaN';
-         this.message = `${this.field}. is not a number.`;
+         this.message = `${this.field} is not a number.`;
       };
    }
 };
@@ -135,5 +135,15 @@ export class InvalidValueError extends Error {
       this.name = 'Invalid Value';
       this.property = property;
       this.message = message;
+   }
+};
+
+export class IsUniqueError extends Error {
+   constructor({ mongoDBValidationError }) {
+      super();
+      this.statusCode = 404;
+      this.field = mongoDBValidationError.path;
+      this.name = `MongoDB Unique Valdation Failed`;
+      this.message = `${mongoDBValidationError.path.charAt(0).toUpperCase() + mongoDBValidationError.path.substring(1)} is already in use.`;
    }
 };
