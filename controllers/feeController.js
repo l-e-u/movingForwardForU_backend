@@ -4,10 +4,12 @@ import Fee from '../models/fee.js';
 import {
    DocumentNotFoundError,
    EmptyStringError,
-   IsUniqueError,
    InvalidMongoDBObjectID,
    NaNError,
 } from '../utils/errorHandlingUtils.js';
+
+import throwError from '../utils/errorHandlingUtils.js';
+import { objectIDisInvalid, isUniqueValidationError } from '../utils/mongooseUtils.js';
 
 // GET all fees
 const getFees = async (req, res, next) => {
@@ -23,14 +25,15 @@ const getFee = async (req, res, next) => {
    try {
       const { id } = req.params;
 
-      if (!mongoose.Types.ObjectId.isValid(id)) throw new InvalidMongoDBObjectID();
+      if (objectIDisInvalid(id)) throwError.objectIDisInvalid({ value: id });
 
       const fee = await Fee.findById(id).populate('createdBy');
 
-      if (!fee) throw new DocumentNotFoundError('Fee');
+      if (!fee) throwError.feeNotFound({ id });
 
       return res.status(200).json(fee);
-   } catch (error) { next(error) };
+   }
+   catch (error) { next(error) };
 };
 
 // POST create a new fee
@@ -39,30 +42,16 @@ const createFee = async (req, res, next) => {
    const { amount, description, name } = req.body;
 
    try {
-      if (!amount || isNaN(amount)) throw new NaNError('Amount');
-      if (!description.trim() || !name.trim()) throw new EmptyStringError(!description.trim() ? 'Description' : 'Name');
+      if (!amount || isNaN(amount)) throwError.isNaN({ path: 'Amount', value: amount });
+      if (!description.trim()) throwError.emptyString({ path: 'Description', value: description });
+      if (!name.trim()) throwError.emptyString({ path: 'Description', value: name });
 
       const fee = await Fee.create({ ...req.body, createdBy: user_id });
       await fee.populate('createdBy');
 
       return res.status(200).json(fee);
    } catch (error) {
-      const { errors } = error;
-
-      if (errors) {
-         const key = Object.keys(errors)[0];
-
-         if (errors[key].kind === 'unique') {
-            next(
-               new IsUniqueError({
-                  mongoDBValidationError: {
-                     ...errors[key],
-                     message: errors._message
-                  }
-               })
-            );
-         };
-      };
+      if (isUniqueValidationError(error)) throwError.uniqueValueError(error);
 
       next(error)
    };

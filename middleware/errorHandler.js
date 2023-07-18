@@ -6,6 +6,7 @@ export const errorHandler = (err, req, res, next) => {
    Endpoint: ${req.method} ${req.path}
    Name: ${err.name}
    Message: ${err.message}
+   Value: ${err.value}
    `;
 
    console.info(errorDetails)

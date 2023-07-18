@@ -142,7 +142,7 @@ const verifyUser = async (req, res, next) => {
 // create a new user
 const registerUser = async (req, res, next) => {
    let { email, firstName } = req.body;
-   firstName = ''
+
    try {
       if (!firstName.trim()) throw new EmptyStringError('firstName', 'First Name', true);
       const user = await User.create({
@@ -156,15 +156,35 @@ const registerUser = async (req, res, next) => {
       return res.status(200).json(user);
    }
    catch (error) {
+      const { errors } = error;
+
+      if (errors) {
+         const key = Object.keys(errors)[0];
+
+         if (errors[key].kind === 'unique') {
+            next(
+               new IsUniqueError({
+                  mongoDBValidationError: {
+                     ...errors[key],
+                     message: errors._message
+                  }
+               })
+            );
+         };
+      };
+
       next(error);
    };
 };
 
 // get all users
-const getUsers = async (req, res) => {
-   const users = await User.find({});
+const getUsers = async (req, res, next) => {
+   try {
+      const users = await User.find({});
 
-   return res.status(200).json(users);
+      return res.status(200).json(users);
+   }
+   catch (error) { next(error) };
 };
 
 // get a user

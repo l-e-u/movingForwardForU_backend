@@ -128,22 +128,97 @@ export class InvalidMongoDBObjectID extends Error {
    }
 };
 
-export class InvalidValueError extends Error {
-   constructor({ message, property }) {
+// export class InvalidValueError extends Error {
+//    constructor({ message, property }) {
+//       super();
+//       this.statusCode = 404;
+//       this.name = 'Invalid Value';
+//       this.property = property;
+//       this.message = message;
+//    }
+// };
+
+class UniqueValueError extends Error {
+   constructor({ path, value }) {
       super();
-      this.statusCode = 404;
-      this.name = 'Invalid Value';
-      this.property = property;
-      this.message = message;
-   }
+      this.statusCode = 409;
+      this.path = path;
+      this.name = `MongoDB Unique Valdation Failed`;
+      this.message = `${path.charAt(0).toUpperCase() + path.substring(1)} is already in use.`;
+      this.value = value;
+   };
 };
 
-export class IsUniqueError extends Error {
-   constructor({ mongoDBValidationError }) {
+class InvalidValueError extends Error {
+   constructor({ path, message, value }) {
       super();
-      this.statusCode = 404;
-      this.field = mongoDBValidationError.path;
-      this.name = `MongoDB Unique Valdation Failed`;
-      this.message = `${mongoDBValidationError.path.charAt(0).toUpperCase() + mongoDBValidationError.path.substring(1)} is already in use.`;
-   }
+      this.message = message;
+      this.name = 'Invalid Value'
+      this.path = path;
+      this.statusCode = 400;
+      this.value = value;
+   };
+};
+
+class MongoDBDocumentNotFoundError extends Error {
+   constructor({ id, modelName }) {
+      super();
+      this.message = `${modelName} was not found.`;
+      this.name = 'Document Not Found';
+      this.value = id;
+   };
+};
+
+const mongoDBdocumentNotFound = (modelName) => {
+   return ({ id }) => {
+      throw new MongoDBDocumentNotFoundError({
+         id,
+         modelName,
+      });
+   };
+};
+
+export const emptyString = ({ path, value }) => {
+   throw new InvalidValueError({
+      path,
+      value,
+      message: `${path} cannot be empty.`
+   });
+};
+
+export const feeNotFound = mongoDBdocumentNotFound('Fee');
+
+export const isNaN = ({ path, value }) => {
+   throw new InvalidValueError({
+      path,
+      value,
+      message: `${path} must be a number.`
+   });
+};
+
+export const objectIDisInvalid = ({ value }) => {
+   throw new InvalidValueError({
+      value,
+      path: 'Mongoose ObjectID',
+      message: 'ObjectID is invalid.'
+   });
+};
+
+export const uniqueValueError = ({ errors }) => {
+   // const { errors } = mongoDBError;
+   const key = Object.keys(errors)[0];
+   const { path, value } = errors[key];
+
+   console.log('in handler:', errors)
+   console.log(path, value)
+
+   throw new UniqueValueError({ path, value });
+}
+
+export default {
+   emptyString,
+   feeNotFound,
+   isNaN,
+   objectIDisInvalid,
+   uniqueValueError
 };

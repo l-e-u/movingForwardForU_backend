@@ -4,8 +4,9 @@ import Status from '../models/status.js';
 import {
    DocumentNotFoundError,
    EmptyStringError,
+   // IsUniqueError,
    InvalidMongoDBObjectID,
-   InvalidValueError,
+   // InvalidValueError,
 } from '../utils/errorHandlingUtils.js';
 
 // GET all statuses
@@ -57,7 +58,25 @@ const createStatus = async (req, res, next) => {
 
       return res.status(200).json(status);
    }
-   catch (error) { next(error) };
+   catch (error) {
+      const { errors } = error;
+
+      if (errors) {
+         const key = Object.keys(errors)[0];
+
+         if (errors[key].kind === 'unique') {
+            next(
+               new IsUniqueError({
+                  mongoDBValidationError: {
+                     ...errors[key],
+                     message: errors._message
+                  }
+               })
+            );
+         };
+      };
+      next(error);
+   };
 };
 
 // delete a status
@@ -96,7 +115,25 @@ const updateStatus = async (req, res, next) => {
 
       res.status(200).json(status);
    }
-   catch (error) { next(error) };
+   catch (error) {
+      const { errors } = error;
+
+      if (errors) {
+         const key = Object.keys(errors)[0];
+
+         if (errors[key].kind === 'unique') {
+            next(
+               new IsUniqueError({
+                  mongoDBValidationError: {
+                     ...errors[key],
+                     message: errors._message
+                  }
+               })
+            );
+         };
+      };
+      next(error);
+   };
 };
 
 export {
