@@ -1,22 +1,27 @@
-export const errorHandler = (err, req, res, next) => {
-   let { statusCode } = err;
+import mongoose from 'mongoose';
 
-   const errorDetails = `
+// utilities
+import { reformatMongooseError } from '../utils/errorUtils.js';
+
+export const errorHandler = (err, req, res, next) => {
+   const error = err instanceof mongoose.Error ? reformatMongooseError(err) : err;
+   let { statusCode } = error;
+
+   console.info(`
    <<-- ERROR -->>
    Endpoint: ${req.method} ${req.path}
-   Name: ${err.name}
-   Message: ${err.message}
-   Value: ${err.value}
-   `;
+   Name: ${error.name}
+   Message: ${error.message}
+   Value: ${error.value}
+   `);
 
-   console.info(errorDetails)
-   console.error(err)
+   console.error(error);
 
    // this is for unhandled exceptions, check console for details
    if (!statusCode) {
       statusCode = 500;
-      err.message = 'An unknown error has occured.'
+      error.message = 'An unknown error has occured.'
    };
 
-   return res.status(statusCode).json({ error: err });
+   return res.status(statusCode).json({ error });
 };

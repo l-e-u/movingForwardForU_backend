@@ -165,13 +165,14 @@ class MongoDBDocumentNotFoundError extends Error {
       super();
       this.message = `${modelName} was not found.`;
       this.name = 'Document Not Found';
+      this.statusCode = 404;
       this.value = id;
    };
 };
 
 const mongoDBdocumentNotFound = (modelName) => {
    return ({ id }) => {
-      throw new MongoDBDocumentNotFoundError({
+      return new MongoDBDocumentNotFoundError({
          id,
          modelName,
       });
@@ -179,7 +180,7 @@ const mongoDBdocumentNotFound = (modelName) => {
 };
 
 export const emptyString = ({ path, value }) => {
-   throw new InvalidValueError({
+   return new InvalidValueError({
       path,
       value,
       message: `${path} cannot be empty.`
@@ -187,38 +188,41 @@ export const emptyString = ({ path, value }) => {
 };
 
 export const feeNotFound = mongoDBdocumentNotFound('Fee');
-
+export const statusNotFound = mongoDBdocumentNotFound('Status');
 export const isNaN = ({ path, value }) => {
-   throw new InvalidValueError({
+   return new InvalidValueError({
       path,
       value,
-      message: `${path} must be a number.`
+      message: `${path} not a number.`
    });
 };
-
+export const invalidCharacter = ({ path, value }) => {
+   return new InvalidValueError({
+      path,
+      value,
+      message: `${path} contains letters, numbers, and spaces only.`
+   });
+};
 export const objectIDisInvalid = ({ value }) => {
-   throw new InvalidValueError({
+   return new InvalidValueError({
       value,
       path: 'Mongoose ObjectID',
       message: 'ObjectID is invalid.'
    });
 };
-
 export const uniqueValueError = ({ errors }) => {
-   // const { errors } = mongoDBError;
    const key = Object.keys(errors)[0];
    const { path, value } = errors[key];
 
-   console.log('in handler:', errors)
-   console.log(path, value)
-
-   throw new UniqueValueError({ path, value });
-}
+   return new UniqueValueError({ path, value });
+};
 
 export default {
    emptyString,
    feeNotFound,
    isNaN,
+   invalidCharacter,
    objectIDisInvalid,
+   statusNotFound,
    uniqueValueError
 };

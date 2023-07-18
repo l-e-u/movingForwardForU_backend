@@ -1,13 +1,7 @@
-import mongoose from 'mongoose';
 import Status from '../models/status.js';
 
-import {
-   DocumentNotFoundError,
-   EmptyStringError,
-   // IsUniqueError,
-   InvalidMongoDBObjectID,
-   // InvalidValueError,
-} from '../utils/errorHandlingUtils.js';
+// utilities
+import MyErrors from '../utils/errorUtils.js';
 
 // GET all statuses
 const getStatuses = async (req, res, next) => {
@@ -24,11 +18,8 @@ const getStatus = async (req, res, next) => {
    const { id } = req.params;
 
    try {
-      if (!mongoose.Types.ObjectId.isValid(id)) throw new InvalidMongoDBObjectID();
-
       const status = await Status.findById(id).populate('createdBy');
-
-      if (!status) throw new DocumentNotFoundError('Status');
+      if (!status) throw MyErrors.statusNotFound({ id });
 
       return res.status(200).json(status);
    }
@@ -37,58 +28,27 @@ const getStatus = async (req, res, next) => {
 
 // create a new status
 const createStatus = async (req, res, next) => {
-   const { _id: user_id } = req.user;
-   const { name, description, isDefault } = req.body;
-   const lettersNumbersSpacesOnly = /^[A-Za-z0-9 ]*$/;
-
-   // add doc to db
    try {
-      if (!name.trim() || !description.trim()) throw new EmptyStringError(!name.trim() ? 'Name' : 'Description');
-      if (!lettersNumbersSpacesOnly.test(name)) {
-         throw new InvalidValueError({
-            property: 'name',
-            message: 'Letters, numbers, and spaces only.'
-         });
-      };
-
-      let status = await Status.create({ ...req.body, createdBy: user_id });
+      let status = await Status.create({
+         ...req.body,
+         createdBy: req.user._id
+      });
 
       // populate field
       status = await status.populate('createdBy');
 
       return res.status(200).json(status);
    }
-   catch (error) {
-      const { errors } = error;
-
-      if (errors) {
-         const key = Object.keys(errors)[0];
-
-         if (errors[key].kind === 'unique') {
-            next(
-               new IsUniqueError({
-                  mongoDBValidationError: {
-                     ...errors[key],
-                     message: errors._message
-                  }
-               })
-            );
-         };
-      };
-      next(error);
-   };
+   catch (error) { next(error) };
 };
 
 // delete a status
 const deleteStatus = async (req, res, next) => {
-   const { id: _id } = req.params;
+   const { id } = req.params;
 
    try {
-      if (!mongoose.Types.ObjectId.isValid(_id)) throw new InvalidMongoDBObjectID();
-
-      const status = await Status.findByIdAndDelete({ _id });
-
-      if (!status) DocumentNotFoundError('Status');
+      const status = await Status.findByIdAndDelete({ _id: id });
+      if (!status) throw MyErrors.statusNotFound({ id });
 
       res.status(200).json(status);
    }
@@ -97,13 +57,11 @@ const deleteStatus = async (req, res, next) => {
 
 // update a status
 const updateStatus = async (req, res, next) => {
-   const { id: _id } = req.params;
+   const { id } = req.params;
 
    try {
-      if (!mongoose.Types.ObjectId.isValid(_id)) throw new InvalidMongoDBObjectID();
-
       const status = await Status.findByIdAndUpdate(
-         { _id },
+         { _id: id },
          { ...req.body },
          {
             returnDocument: 'after',
@@ -111,29 +69,11 @@ const updateStatus = async (req, res, next) => {
          }
       ).populate('createdBy');
 
-      if (!status) DocumentNotFoundError('Status');
+      if (!status) throw MyErrors.statusNotFound({ id });
 
       res.status(200).json(status);
    }
-   catch (error) {
-      const { errors } = error;
-
-      if (errors) {
-         const key = Object.keys(errors)[0];
-
-         if (errors[key].kind === 'unique') {
-            next(
-               new IsUniqueError({
-                  mongoDBValidationError: {
-                     ...errors[key],
-                     message: errors._message
-                  }
-               })
-            );
-         };
-      };
-      next(error);
-   };
+   catch (error) { next(error) };
 };
 
 export {
