@@ -39,6 +39,7 @@ const mongoDBdocumentNotFound = (modelName) => {
    };
 };
 
+export const contactNotFound = mongoDBdocumentNotFound('Contact');
 export const feeNotFound = mongoDBdocumentNotFound('Fee');
 export const statusNotFound = mongoDBdocumentNotFound('Status');
 
@@ -76,6 +77,7 @@ export const reformatMongooseError = (err) => {
 };
 
 export default {
+   contactNotFound,
    feeNotFound,
    statusNotFound
 }

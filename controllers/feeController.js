@@ -1,7 +1,7 @@
 import Fee from '../models/fee.js';
 
 // utilities
-import MyErrors from '../utils/errorHandlingUtils.js';
+import MyErrors from '../utils/errorUtils.js';
 
 // GET all fees
 const getFees = async (req, res, next) => {
