@@ -1,173 +1,152 @@
-import mongoose from 'mongoose';
-import { deleteAttachments } from './attachmentController.js';
-
 // models
 import Archive from '../models/archive.js';
 import Job from '../models/job.js';
 
+// utilities
+import { deleteAttachments } from '../utils/attachmentUtils.js';
+import MyErrors from '../utils/errorUtils.js';
+
 // get all archives
-const getArchives = async (req, res) => {
-    let { page, limit, ...filters } = req.query;
+const getArchives = async (req, res, next) => {
+   let { page, limit, ...filters } = req.query;
 
-    page = parseInt(page || 0);
-    limit = parseInt(limit || 0);
+   page = parseInt(page || 0);
+   limit = parseInt(limit || 0);
 
-    let startIndex = (page - 1) * limit;
-    let endIndex = page * limit;
-    let totalPages = 0;
+   let startIndex = (page - 1) * limit;
+   let endIndex = page * limit;
+   let totalPages = 0;
 
-    // format the filters for mongodb
-    if (filters.organization) {
-        filters.organization = { $regex: filters.organization };
-    };
+   // format the filters for mongodb
+   if (filters.organization) {
+      filters.organization = { $regex: filters.organization };
+   };
 
-    if (filters.drivers) {
-        const text = filters.drivers;
-        filters.drivers = { $elemMatch: { $or: [{ name: { $regex: text, $options: 'i' } }, { email: { $regex: text, $options: 'i' } }] } };
-    };
+   if (filters.drivers) {
+      const text = filters.drivers;
+      filters.drivers = { $elemMatch: { $or: [{ name: { $regex: text, $options: 'i' } }, { email: { $regex: text, $options: 'i' } }] } };
+   };
 
-    if (filters.reference) {
-        filters.reference = { $regex: filters.reference, $options: 'i' };
-    };
+   if (filters.reference) {
+      filters.reference = { $regex: filters.reference, $options: 'i' };
+   };
 
-    if (filters.mileageGTE) {
-        filters.mileage = { $gte: filters.mileageGTE };
-        delete filters.mileageGTE;
-    };
+   if (filters.mileageGTE) {
+      filters.mileage = { $gte: filters.mileageGTE };
+      delete filters.mileageGTE;
+   };
 
-    if (filters.mileageLTE) {
-        filters.mileage = { ...filters.mileage, $lte: filters.mileageLTE };
-        delete filters.mileageLTE;
-    };
+   if (filters.mileageLTE) {
+      filters.mileage = { ...filters.mileage, $lte: filters.mileageLTE };
+      delete filters.mileageLTE;
+   };
 
-    if (filters.createdOnGTE) {
-        filters.createdAt = { $gte: filters.createdOnGTE };
-        delete filters.createdOnGTE;
-    };
+   if (filters.createdOnGTE) {
+      filters.createdAt = { $gte: filters.createdOnGTE };
+      delete filters.createdOnGTE;
+   };
 
-    if (filters.createdOnLTE) {
-        filters.createdAt = { ...filters.createdAt, $lte: filters.createdOnLTE };
-        delete filters.createdOnLTE;
-    };
+   if (filters.createdOnLTE) {
+      filters.createdAt = { ...filters.createdAt, $lte: filters.createdOnLTE };
+      delete filters.createdOnLTE;
+   };
 
-    if (filters.pickupOnGTE) {
-        filters['pickup.date'] = { $gte: filters.pickupOnGTE };
-        delete filters.pickupOnGTE;
-    };
+   if (filters.pickupOnGTE) {
+      filters['pickup.date'] = { $gte: filters.pickupOnGTE };
+      delete filters.pickupOnGTE;
+   };
 
-    if (filters.pickupOnLTE) {
-        filters['pickup.date'] = { ...filters['pickup.date'], $lte: filters.pickupOnLTE };
-        delete filters.pickupOnLTE;
-    };
+   if (filters.pickupOnLTE) {
+      filters['pickup.date'] = { ...filters['pickup.date'], $lte: filters.pickupOnLTE };
+      delete filters.pickupOnLTE;
+   };
 
-    if (filters.deliveryOnGTE) {
-        filters['delivery.date'] = { $gte: filters.deliveryOnGTE };
-        delete filters.deliveryOnGTE;
-    };
+   if (filters.deliveryOnGTE) {
+      filters['delivery.date'] = { $gte: filters.deliveryOnGTE };
+      delete filters.deliveryOnGTE;
+   };
 
-    if (filters.deliveryOnLTE) {
-        filters['delivery.date'] = { ...filters['delivery.date'], $lte: filters.deliveryOnLTE };
-        delete filters.deliveryOnLTE;
-    };
+   if (filters.deliveryOnLTE) {
+      filters['delivery.date'] = { ...filters['delivery.date'], $lte: filters.deliveryOnLTE };
+      delete filters.deliveryOnLTE;
+   };
 
-    if (filters.notes) {
-        const text = filters.notes;
-        filters.notes = { $elemMatch: { $or: [{ subject: { $regex: text, $options: 'i' } }, { message: { $regex: text, $options: 'i' } }] } };
-    };
+   if (filters.notes) {
+      const text = filters.notes;
+      filters.notes = { $elemMatch: { $or: [{ subject: { $regex: text, $options: 'i' } }, { message: { $regex: text, $options: 'i' } }] } };
+   };
 
-    console.log('filters:', filters);
+   console.log('filters:', filters);
 
-    const archives = await Archive.find(filters).populate('amendments.createdBy');
-    const count = archives.length;
-    totalPages = Math.floor(count / limit);
+   try {
 
-    if (count > limit) totalPages += (count % limit) === 0 ? 0 : 1;
+      const archives = await Archive.find(filters).populate('amendments.createdBy');
+      const count = archives.length;
+      totalPages = Math.floor(count / limit);
 
-    // set boundaries for safety
-    if (!limit || limit === 0 || limit > count || startIndex > count) {
-        startIndex = 0;
-        endIndex = archives.length;
-        totalPages = 1;
-    };
+      if (count > limit) totalPages += (count % limit) === 0 ? 0 : 1;
 
-    const results = archives.splice(startIndex, endIndex);
+      // set boundaries for safety
+      if (!limit || limit === 0 || limit > count || startIndex > count) {
+         startIndex = 0;
+         endIndex = archives.length;
+         totalPages = 1;
+      };
 
-    return res.status(200).json({ count, results, totalPages });
-}
+      const results = archives.splice(startIndex, endIndex);
+
+      return res.status(200).json({ count, results, totalPages });
+   }
+   catch (error) { next(error) };
+};
 
 // create a new archive
-const createArchive = async (req, res) => {
-    const { receipt, job_id } = req.body;
+const createArchive = async (req, res, next) => {
+   const { receipt, job_id } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(job_id)) {
-        return res.status(404).json({ error: { message: 'No such job.' } });
-    };
+   try {
+      await Archive.create({ ...receipt });
+      const job = await Job.findByIdAndDelete(job_id);
 
-    try {
-        const archive = await Archive.create({ ...receipt });
-
-        if (!archive) {
-            return res.status(404).json({ message: 'No such archive.' });
-        };
-
-        const job = await Job.findByIdAndDelete(job_id);
-
-        if (!archive) {
-            return res.status(404).json({ message: 'No such job.' });
-        };
-
-        console.log('Archived job:', job_id);
-
-        res.status(200).json(job);
-
-    } catch (err) {
-        console.error(err);
-
-        return res.status(400).json({ error: err });
-    };
+      res.status(200).json(job);
+   }
+   catch (error) { next(error) };
 };
 
 // delete an archive
-const deleteArchive = async (req, res) => {
-    const { id } = req.params;
-    const error = { message: 'Cannot find archive.' };
+const deleteArchive = async (req, res, next) => {
+   const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ error });
-    };
+   try {
+      const archive = await Archive.findByIdAndDelete({ _id: id });
+      if (!archive) throw MyErrors.archiveNotFound({ id });
 
-    const archive = await Archive.findByIdAndDelete(id);
+      // after the arhive has been deleted loop through all notes and deleted all attachments
+      archive.notes.forEach(({ attachments }) => deleteAttachments(attachments.map(attachment => ({ id: attachment.files_id }))));
 
-    if (!archive) return res.status(404).json({ error });
-
-    // after the arhive has been deleted loop through all notes and deleted all attachments
-    archive.notes.forEach(({ attachments }) => deleteAttachments(attachments.map(attachment => ({ id: attachment.files_id }))));
-
-    return res.status(200).json(archive);
+      return res.status(200).json(archive);
+   }
+   catch (error) { next(error) };
 };
 
 // update an archive
-const updateArchive = async (req, res) => {
-    const { _id: user_id } = req.user;
-    const { id } = req.params;
-    const { text } = req.body;
-    const error = { message: 'Cannot find archive.' };
+const updateArchive = async (req, res, next) => {
+   const { _id: user_id } = req.user;
+   const { id } = req.params;
+   const { text } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({ error });
-    };
+   try {
+      const archive = await Archive.findByIdAndUpdate(
+         { _id: id },
+         { $push: { amendments: { text, createdBy: user_id } } },
+         { returnDocument: 'after' }
+      ).populate('amendments.createdBy');
 
-    const archive = await Archive.findByIdAndUpdate(
-        { _id: id },
-        { $push: { amendments: { text, createdBy: user_id } } },
-        { returnDocument: 'after' }
-    ).populate('amendments.createdBy');
+      if (!archive) throw MyErrors.archiveNotFound({ id })
 
-    await archive.pop
-
-    if (!archive) return res.status(404).json({ error });
-
-    return res.status(200).json(archive);
+      return res.status(200).json(archive);
+   }
+   catch (error) { next(error) };
 };
 
 export { createArchive, deleteArchive, getArchives, updateArchive };

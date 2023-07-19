@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import Contact from '../models/contact.js';
 
+// utilities
 import MyErrors from '../utils/errorUtils.js';
 
 const subDocumentsToPopulate = [
@@ -16,7 +16,7 @@ const getContacts = async (req, res, next) => {
       return res.status(200).json(contacts);
    }
    catch (error) { next(error) };
-}
+};
 
 // get a single contact
 const getContact = async (req, res, next) => {

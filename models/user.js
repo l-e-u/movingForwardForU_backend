@@ -11,7 +11,7 @@ const userSchema = new Schema({
    firstName: {
       type: String,
       trim: true,
-      required: true,
+      required: [true, 'First Name is required.'],
    },
    comments: {
       type: String,
@@ -22,7 +22,7 @@ const userSchema = new Schema({
       type: String,
       lowercase: true,
       unique: true,
-      required: true,
+      required: [true, 'Email is required.'],
       match: [/\S+@\S+\.\S+/, 'is invalid'],
    },
    //Our password is hashed with bcrypt
@@ -41,7 +41,7 @@ const userSchema = new Schema({
    lastName: {
       type: String,
       trim: true,
-      required: true
+      required: [true, 'Last Name is required.']
    },
 }, {
    timestamps: true,
@@ -53,7 +53,7 @@ const userSchema = new Schema({
 }
 );
 
-userSchema.plugin(uniqueValidator, { message: 'Is already in use.' });
+userSchema.plugin(uniqueValidator);
 
 // changes a user's password
 userSchema.statics.changePassword = async function ({ _id, password, confirmPassword }) {
