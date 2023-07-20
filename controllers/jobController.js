@@ -1,8 +1,12 @@
 import mongoose from 'mongoose';
-import { deleteAttachments } from '../utils/attachmentUtils.js';
 
 // model
 import Job from '../models/job.js';
+
+// utilities
+import MyErrors from '../utils/errorUtils.js';
+import { deleteAttachments } from '../utils/attachmentUtils.js';
+import { applyFiltersToQuery } from '../utils/mongooseUtils.js';
 
 const docFieldsToPopulate = [
    'billing.fee',
@@ -14,9 +18,8 @@ const docFieldsToPopulate = [
 ];
 
 // get all jobs
-const getJobs = async (req, res) => {
+const getJobs = async (req, res, next) => {
    let { page, limit, ...filters } = req.query;
-
    page = parseInt(page || 0);
    limit = parseInt(limit || 0);
 
@@ -24,113 +27,58 @@ const getJobs = async (req, res) => {
    let endIndex = page * limit;
    let totalPages = 0;
 
-   // format the filters for mongodb
-   if (filters.status) {
-      filters.status = { $in: filters.status.split(',') };
-   };
+   try {
+      // build the query by applying filters, then return filtered results
+      const jobs = await applyFiltersToQuery({
+         filters,
+         query: Job.find({})
+      })
+         .populate(docFieldsToPopulate)
+         .sort({ createdAt: -1 });
 
-   if (filters.customer) {
-      filters.customer = { $in: filters.customer.split(',') };
-   };
+      const count = jobs.length;
+      totalPages = Math.floor(count / limit);
 
-   if (filters.reference) {
-      filters.reference = { $regex: filters.reference, $options: 'i' };
-   };
+      if (count > limit) totalPages += (count % limit) === 0 ? 0 : 1;
 
-   if (filters.mileageGTE) {
-      filters.mileage = { $gte: filters.mileageGTE };
-      delete filters.mileageGTE;
-   };
+      // set boundaries for safety
+      if (!limit || limit === 0 || limit > count || startIndex > count) {
+         startIndex = 0;
+         endIndex = jobs.length;
+         totalPages = 1;
+      };
 
-   if (filters.mileageLTE) {
-      filters.mileage = { ...filters.mileage, $lte: filters.mileageLTE };
-      delete filters.mileageLTE;
-   };
+      console.log('count:', count)
+      console.log('page:', page)
+      console.log('limit:', limit)
+      console.log('start:', startIndex)
+      console.log('end:', endIndex)
 
-   if (filters.createdOnGTE) {
-      filters.createdAt = { $gte: filters.createdOnGTE };
-      delete filters.createdOnGTE;
-   };
+      const results = jobs.splice(startIndex, endIndex);
 
-   if (filters.createdOnLTE) {
-      filters.createdAt = { ...filters.createdAt, $lte: filters.createdOnLTE };
-      delete filters.createdOnLTE;
-   };
-
-   if (filters.pickupOnGTE) {
-      filters['pickup.date'] = { $gte: filters.pickupOnGTE };
-      delete filters.pickupOnGTE;
-   };
-
-   if (filters.pickupOnLTE) {
-      filters['pickup.date'] = { ...filters['pickup.date'], $lte: filters.pickupOnLTE };
-      delete filters.pickupOnLTE;
-   };
-
-   if (filters.deliveryOnGTE) {
-      filters['delivery.date'] = { $gte: filters.deliveryOnGTE };
-      delete filters.deliveryOnGTE;
-   };
-
-   if (filters.deliveryOnLTE) {
-      filters['delivery.date'] = { ...filters['delivery.date'], $lte: filters.deliveryOnLTE };
-      delete filters.deliveryOnLTE;
-   };
-
-   if (filters.notes) {
-      const text = filters.notes;
-      filters.notes = { $elemMatch: { $or: [{ subject: { $regex: text, $options: 'i' } }, { message: { $regex: text, $options: 'i' } }] } };
-   };
-
-   console.log('filters:', filters);
-
-   const jobs = await Job.find(filters).populate(docFieldsToPopulate).sort({ createdAt: -1 });
-   const count = jobs.length;
-   totalPages = Math.floor(count / limit);
-
-   if (count > limit) totalPages += (count % limit) === 0 ? 0 : 1;
-
-   // set boundaries for safety
-   if (!limit || limit === 0 || limit > count || startIndex > count) {
-      startIndex = 0;
-      endIndex = jobs.length;
-      totalPages = 1;
-   };
-
-   console.log('count:', count)
-   console.log('page:', page)
-   console.log('limit:', limit)
-   console.log('start:', startIndex)
-   console.log('end:', endIndex)
-
-   const results = jobs.splice(startIndex, endIndex);
-
-   console.log('total pages:', totalPages);
+      console.log('total pages:', totalPages);
 
 
-   return res.status(200).json({ count, results, totalPages });
-}
+      return res.status(200).json({ count, results, totalPages });
+   }
+   catch (error) { next(error) };
+};
 
 // get a single job
-const getJob = async (req, res) => {
+const getJob = async (req, res, next) => {
    const { id } = req.params;
-   const error = { server: { message: 'No such job.' } };
 
-   if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(404).json({ error });
-   };
+   try {
+      const job = await Job.findById(id).populate(docFieldsToPopulate);
+      if (!job) throw MyErrors.jobNotFound();
 
-   const job = await Job.findById(id).populate(docFieldsToPopulate);
-
-   if (!job) {
-      return res.status(404).json({ error });
-   };
-
-   res.status(200).json(job);
+      res.status(200).json(job);
+   }
+   catch (error) { next(error) };
 };
 
 // create new job
-const createJob = async (req, res) => {
+const createJob = async (req, res, next) => {
    const { _id: user_id } = req.user;
 
    // from client
@@ -211,28 +159,23 @@ const createJob = async (req, res) => {
 };
 
 // delete a job
-const deleteJob = async (req, res) => {
+const deleteJob = async (req, res, next) => {
    const { id } = req.params;
-   const error = { server: { message: 'No such job.' } };
 
-   if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(404).json({ error });
-   };
+   try {
+      const job = await Job.findByIdAndDelete(id);
+      if (!job) throw MyErrors.jobNotFound();
 
-   const job = await Job.findByIdAndDelete(id);
+      // after the job has been deleted loop through all notes and deleted all attachments
+      job.notes.forEach(({ attachments }) => deleteAttachments(attachments.map(attachment => ({ id: attachment.files_id }))));
 
-   if (!job) {
-      return res.status(404).json({ error });
-   };
-
-   // after the job has been deleted loop through all notes and deleted all attachments
-   job.notes.forEach(({ attachments }) => deleteAttachments(attachments.map(attachment => ({ id: attachment.files_id }))));
-
-   res.status(200).json(job);
+      res.status(200).json(job);
+   }
+   catch (error) { next(error) };
 };
 
 // update a job
-const updateJob = async (req, res) => {
+const updateJob = async (req, res, next) => {
    const { id } = req.params;
    const error = { server: { message: 'No such job.' } };
 

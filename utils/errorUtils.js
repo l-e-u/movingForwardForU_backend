@@ -65,6 +65,7 @@ export const contactNotFound = mongoDBdocumentNotFound('Contact');
 export const feeNotFound = mongoDBdocumentNotFound('Fee');
 export const statusNotFound = mongoDBdocumentNotFound('Status');
 export const userNotFound = mongoDBdocumentNotFound('User');
+export const jobNotFound = mongoDBdocumentNotFound('Job');
 
 export const emailUnverified = ({ value }) => new AccessError({
    value,
@@ -142,6 +143,7 @@ export default {
    feeNotFound,
    statusNotFound,
    userNotFound,
+   jobNotFound,
    emailUnverified,
    invalidCredentials,
    jwtInvalid,

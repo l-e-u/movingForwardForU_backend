@@ -24,6 +24,11 @@ app.use(cors());
 app.use(urlencoded({ extended: true }));
 app.use(json());
 
+app.use((req, res, next) => {
+   console.log(req.method, req.path);
+   next();
+})
+
 // routes
 app.use('/api/archives', archiveRoutes);
 app.use('/api/attachments', attachmentRoutes);
