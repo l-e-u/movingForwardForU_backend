@@ -11,6 +11,7 @@ import {
 // middleware
 import { requireAuth } from '../middleware/requireAuth.js';
 import { uploadAttachments } from '../middleware/uploadAttachments.js';
+import { paginate } from '../middleware/paginate.js';
 
 const router = Router();
 
@@ -18,7 +19,7 @@ const router = Router();
 router.use(requireAuth);
 
 // GET jobs
-router.get('/', getJobs);
+router.get('/', getJobs, paginate);
 
 // GET a single job
 router.get('/:id', getJob);

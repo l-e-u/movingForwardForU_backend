@@ -111,8 +111,10 @@ export const reformatMongooseError = (err) => {
    if (err.errors) key = Object.keys(err.errors)[0];
 
    const error = err.errors?.[key] || err;
-   const { name, message, path, kind, value } = error;
+   const { name, message, kind, value } = error;
+   const path = key === error.path ? error.path : key;
    // console.log('THIS WAS CAUTH SUCCEFULLY:', error)
+   console.log('key:', key)
    console.log('name', name)
    console.log('message', message)
    console.log('path', path)
