@@ -58,6 +58,7 @@ const getJobs = async (req, res, next) => {
 
       console.log('total pages:', totalPages);
 
+req.body.list = jobs;
 
       return res.status(200).json({ count, results, totalPages });
    }

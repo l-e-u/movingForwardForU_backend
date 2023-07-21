@@ -7,7 +7,7 @@ export const paginate =({array,currentPage,limit}) => {
    const count = array.length;
    totalPages = Math.floor(count / limit);
    
-   
+   // whenever the number of 
    if (count > limit){
      totalPages += (count % limit) === 0 ? 0 : 1;
    };
