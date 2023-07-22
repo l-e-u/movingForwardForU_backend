@@ -6,6 +6,7 @@ import Job from '../models/job.js';
 // utilities
 import MyErrors from '../utils/errorUtils.js';
 import { deleteAttachments } from '../utils/attachmentUtils.js';
+import { referenceNewlyUploadedFilesToNoteAttachments } from '../utils/attachmentUtils.js';
 import { applyFiltersToQuery } from '../utils/mongooseUtils.js';
 
 const docFieldsToPopulate = [
@@ -90,7 +91,7 @@ const getJob = async (req, res, next) => {
 
    try {
       const job = await Job.findById(id).populate(docFieldsToPopulate);
-      if (!job) throw MyErrors.jobNotFound();
+      if (!job) throw MyErrors.jobNotFound({ id });
 
       res.status(200).json(job);
    }
@@ -99,29 +100,17 @@ const getJob = async (req, res, next) => {
 
 // create new job
 const createJob = async (req, res, next) => {
-   const { _id: user_id } = req.user;
-
-   // from client
    const newJob = JSON.parse(req.body.job);
 
-   // from middleware
-   const files = req.files;
-
    try {
-      // loop through each note and attachements to find the file corresponding to that attachment
-      newJob.notes.forEach(({ attachments }) => {
-         // for new jobs, if there's any attachments, then there's a new file
-         attachments.forEach((attachment, index) => {
-            const file = files.find(f => f.originalname === attachment.filename);
-            const { contentType, filename, id, originalname, size } = file;
-            attachments[index] = { contentType, filename, originalname, size, files_id: id };
-         })
+      referenceNewlyUploadedFilesToNoteAttachments({
+         notes: newJob.notes,
+         files: req.files
       });
 
-      // add doc to db
       let job = await Job.create({
          ...newJob,
-         createdBy: user_id
+         createdBy: req.user._id
       });
 
       // populate fields
@@ -141,7 +130,7 @@ const deleteJob = async (req, res, next) => {
       if (!job) throw MyErrors.jobNotFound();
 
       // after the job has been deleted loop through all notes and deleted all attachments
-      job.notes.forEach(({ attachments }) => deleteAttachments(attachments.map(attachment => ({ id: attachment.files_id }))));
+      job.notes.forEach(note => deleteAttachments(note.attachments));
 
       res.status(200).json(job);
    }
@@ -164,19 +153,16 @@ const updateJob = async (req, res, next) => {
             // if a new file is found, then set its info
             if (file) {
                const { contentType, filename, id, originalname, size } = file;
-               attachments[index] = { contentType, filename, originalname, size, files_id: id };
+               attachments[index] = { contentType, filename, originalname, size, _id: id };
             };
          });
       });
 
-      // this applies only when adding a single new note from a driver
-      if (updates.notes?.length > 0) {
-         const note = updates.notes[0];
-
-         if (!note._id) {
-            updates.$push = { notes: updates.notes[0] };
-            delete updates.notes;
-         };
+      // a single note from the driver only needs to have the note pushed
+      if (updates.driverNote) {
+         updates.$push = { notes: updates.notes[0] };
+         delete updates.notes;
+         delete updates.driverNote;
       };
 
       console.log('Updated fields:', updates);
@@ -190,7 +176,7 @@ const updateJob = async (req, res, next) => {
          }
       ).populate(docFieldsToPopulate);
 
-      if (!job) MyErrors.jobNotFound();
+      if (!job) MyErrors.jobNotFound({ id });
 
       // once the document has been updated, deleted the old attachments of the notes that were removed
       deleteAttachments(filesToDelete);

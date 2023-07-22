@@ -122,7 +122,7 @@ const deleteArchive = async (req, res, next) => {
       if (!archive) throw MyErrors.archiveNotFound({ id });
 
       // after the arhive has been deleted loop through all notes and deleted all attachments
-      archive.notes.forEach(({ attachments }) => deleteAttachments(attachments.map(attachment => ({ id: attachment.files_id }))));
+      archive.notes.forEach(note => deleteAttachments(note.attachments));
 
       return res.status(200).json(archive);
    }

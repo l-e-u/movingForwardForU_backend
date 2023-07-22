@@ -108,7 +108,4 @@ const jobSchema = new Schema(
    }
 );
 
-jobSchema.pre('findOneAndDelete', () => console.log('deleting'))
-
-const Job = Model('Job', jobSchema);
-export default Job;
+export default Model('Job', jobSchema);;

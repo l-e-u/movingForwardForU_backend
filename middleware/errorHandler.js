@@ -34,3 +34,6 @@ export const errorHandler = (err, req, res, next) => {
 
    return res.status(statusCode).json({ error });
 };
+
+process.on('uncaughtException', (error) => console.error('Unchaught Error:', error));
+process.on('unhandledRejection', (rejection) => console.error('Unhandled Rejection:', rejection));

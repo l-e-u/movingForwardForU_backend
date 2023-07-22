@@ -35,6 +35,7 @@ class MongoDBDocumentNotFoundError extends Error {
       this.message = `${modelName} was not found.`;
       this.name = 'Document Not Found';
       this.statusCode = 404;
+      this.path = 'ObjectID';
       this.value = id;
    };
 };

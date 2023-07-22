@@ -33,7 +33,8 @@ const uploadAttachments = async (req, res, next) => {
    try {
       await uploadFilesPromise(req, res);
 
-      console.log('uploaded:', req.files)
+      console.log('Uploaded Files:');
+      console.log(req.files);
 
       next();
    }

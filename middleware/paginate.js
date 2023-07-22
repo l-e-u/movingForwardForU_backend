@@ -3,14 +3,14 @@ export const paginate = (req, res, next) => {
    const page = parseInt(req.query.page || 0);
    const limit = parseInt(req.query.limit || 0);
 
-   const numberOfItems = list.length - 1;
+   const numberOfItems = list.length;
 
    let lastItemIndex = page * limit;
    let firstItemIndex = lastItemIndex - limit;
    let numberOfPages = Math.ceil(numberOfItems / limit);
 
    // index out of bounds when it exceeds the number of items
-   if (lastItemIndex > numberOfItems) lastItemIndex = list.length;
+   if (lastItemIndex >= numberOfItems) lastItemIndex = list.length;
 
    // page is out of bounds, so return the last page.
    if (page > numberOfPages) {
