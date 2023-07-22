@@ -1,11 +1,16 @@
 import mongoose from 'mongoose';
 
+// accepts an array of notes and an array of files
 export const referenceNewlyUploadedFilesToNoteAttachments = ({ notes, files }) => {
    notes.forEach((note, noteIndex) => {
+       // each note contains an array of attachments
       note.attachments.forEach((attachment, attachmentIndex) => {
+          // an attachment with a newly uploaded file while have an empty object named 'file'
          if (attachment.file) {
+             // find the uploaded file that belongs to this attachment
             const { id, ...uploadedFileDetails } = files.find(file => attachment.filename === file.originalname);
 
+// save the uploaded file details to this note's attachment's, renaming only id to _id
             notes[noteIndex].attachments[attachmentIndex] = {
                ...uploadedFileDetails,
                _id: id
