@@ -37,12 +37,7 @@ const noteSchema = new Schema(
          type: String,
          trim: true,
          index: true,
-      },
-      subject: {
-         type: String,
-         trim: true,
-         index: true,
-         required: [true, 'Subject is required.']
+         required: [true, 'Message is required.'],
       },
       updatedAt: {
          type: Date,
