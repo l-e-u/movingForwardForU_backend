@@ -48,10 +48,13 @@ const userSchema = new Schema({
    toJSON: {
       transform: function (doc, json) {
          delete json.password
-      }
+      },
+      virtuals: true
    }
 }
 );
+
+userSchema.virtual('fullName').get(function () { return `${this.firstName} ${this.lastName}`; });
 
 userSchema.plugin(uniqueValidator);
 

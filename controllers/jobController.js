@@ -96,10 +96,12 @@ const updateJob = async (req, res, next) => {
    const filesToDelete = JSON.parse(req.body.filesToDelete);
 
    try {
-     referenceNewlyUploadedFilesToNoteAttachments({
-         notes:updates.notes,
-         files:req.files
-     });
+      if (updates.notes) {
+         referenceNewlyUploadedFilesToNoteAttachments({
+            notes: updates.notes,
+            files: req.files
+         });
+      };
 
       // a single note from the driver only needs to have the note pushed since they can only add one note at a time
       if (updates.driverNote) {
