@@ -6,7 +6,6 @@ const transportSchema = new Schema({
       type: Date,
    },
    address: {
-      index: true,
       required: [true, 'Address is required.'],
       trim: true,
       type: String,
@@ -36,7 +35,6 @@ const noteSchema = new Schema(
       message: {
          type: String,
          trim: true,
-         index: true,
          required: [true, 'Message is required.'],
       },
       updatedAt: {
