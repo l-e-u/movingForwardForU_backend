@@ -11,7 +11,7 @@ const storage = new GridFsStorage({
    url: process.env.MONGO_URI,
    options: { useNewUrlParser: true, useUnifiedTopology: true },
    file: (req, file) => {
-      const match = ['image/jpeg', 'image/jpg', 'image/png'];
+      const match = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
 
       // html file input accepted files are set the same, this is a second safety net
       if (match.indexOf(file.mimetype) === -1) {
