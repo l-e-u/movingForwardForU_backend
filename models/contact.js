@@ -55,6 +55,11 @@ const contactSchema = new Schema(
          type: String,
          trim: true,
       },
+      website: {
+         type: String,
+         trim: true,
+         set: i => !i ? null : i
+      },
    },
    { timestamps: true }
 );
