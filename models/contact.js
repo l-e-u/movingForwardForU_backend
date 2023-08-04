@@ -29,7 +29,7 @@ const contactSchema = new Schema(
          set: i => !i ? null : i,
          match: [/\S+@\S+\.\S+/, 'Email is invalid.'],
       },
-      misc: {
+      note: {
          type: String,
          trim: true,
          set: i => !i ? null : i
