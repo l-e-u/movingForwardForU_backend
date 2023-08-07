@@ -76,10 +76,6 @@ const jobSchema = new Schema(
          ref: 'User',
          type: Schema.Types.ObjectId,
       }],
-      fees: [{
-         ref: 'Fee',
-         type: Schema.Types.ObjectId,
-      }],
       parcel: {
          set: i => !i ? null : i,
          trim: true,
