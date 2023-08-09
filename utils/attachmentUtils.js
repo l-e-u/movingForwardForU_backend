@@ -1,16 +1,31 @@
 import mongoose from 'mongoose';
 
+export const referenceUploadedFilesToAttachments = ({ attachments, files }) => {
+   attachments.forEach((attachment, index) => {
+      // newly uploaded files are found in the file property in the attachment
+      if (attachment.file) {
+         // find the uploaded file that belongs to this attachment
+         const { id, ...uploadedFileDetails } = files.find(file => attachment.filename === file.originalname);
+
+         attachments[index] = {
+            ...uploadedFileDetails,
+            _id: id
+         };
+      };
+   });
+};
+
 // accepts an array of notes and an array of files
 export const referenceNewlyUploadedFilesToNoteAttachments = ({ notes, files }) => {
    notes.forEach((note, noteIndex) => {
-       // each note contains an array of attachments
+      // each note contains an array of attachments
       note.attachments.forEach((attachment, attachmentIndex) => {
-          // an attachment with a newly uploaded file while have an empty object named 'file'
+         // an attachment with a newly uploaded file while have an empty object named 'file'
          if (attachment.file) {
-             // find the uploaded file that belongs to this attachment
+            // find the uploaded file that belongs to this attachment
             const { id, ...uploadedFileDetails } = files.find(file => attachment.filename === file.originalname);
 
-// save the uploaded file details to this note's attachment's, renaming only id to _id
+            // save the uploaded file details to this note's attachment's, renaming only id to _id
             notes[noteIndex].attachments[attachmentIndex] = {
                ...uploadedFileDetails,
                _id: id

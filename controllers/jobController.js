@@ -5,7 +5,7 @@ import Job from '../models/job.js';
 
 // utilities
 import MyErrors from '../utils/errorUtils.js';
-import { deleteAttachments } from '../utils/attachmentUtils.js';
+import { deleteAttachments, referenceUploadedFilesToAttachments } from '../utils/attachmentUtils.js';
 import { referenceNewlyUploadedFilesToNoteAttachments } from '../utils/attachmentUtils.js';
 import { applyFiltersToQuery } from '../utils/mongooseUtils.js';
 
@@ -55,8 +55,9 @@ const createJob = async (req, res, next) => {
    const newJob = JSON.parse(req.body.job);
 
    try {
-      referenceNewlyUploadedFilesToNoteAttachments({
-         notes: newJob.notes,
+      // only executes if there is a note
+      referenceUploadedFilesToAttachments({
+         attachments: newJob.notes[0]?.attachments || [],
          files: req.files
       });
 
