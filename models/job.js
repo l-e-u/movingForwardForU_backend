@@ -94,18 +94,6 @@ const jobSchema = new Schema(
    },
    {
       timestamps: true,
-      toJSON: {
-         transform: function (doc, json) {
-            // set the billing to be all combined with populated fee fields and the overrideAmount field
-            json.billing = json.billing.map(bill => (
-               {
-                  ...bill.fee,
-                  overrideAmount: bill.overrideAmount
-               }
-            ))
-         },
-         virtuals: true
-      }
    }
 );
 

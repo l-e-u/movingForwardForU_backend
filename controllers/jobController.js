@@ -1,5 +1,3 @@
-import mongoose from 'mongoose';
-
 // model
 import Job from '../models/job.js';
 
