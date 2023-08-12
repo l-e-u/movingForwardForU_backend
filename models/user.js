@@ -13,7 +13,13 @@ const userSchema = new Schema({
       trim: true,
       required: [true, 'First Name is required.'],
    },
-   comments: {
+   phoneNumber: {
+      type: String,
+      trim: true,
+      set: i => !i ? null : i.match(/\d/g).join(''),
+      match: [/^\d{10}$/, 'Phone needs 9 digits.']
+   },
+   note: {
       type: String,
       trim: true,
       set: i => !i ? null : i
