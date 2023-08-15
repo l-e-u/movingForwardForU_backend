@@ -18,7 +18,7 @@ const router = Router();
 // authenticates user is valid and logged in to access further end points
 router.use(requireAuth);
 
-// GET jobs
+// GET all jobs
 router.get('/', getJobs, paginate);
 
 // GET a single job

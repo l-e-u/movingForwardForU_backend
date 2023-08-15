@@ -49,6 +49,11 @@ const userSchema = new Schema({
       trim: true,
       required: [true, 'Last Name is required.']
    },
+   roles: [{
+      type: String,
+      lowercase: true,
+      default: 'driver'
+   }]
 }, {
    timestamps: true,
    toJSON: {
