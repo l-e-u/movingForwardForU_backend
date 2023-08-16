@@ -29,6 +29,16 @@ class InvalidValueError extends Error {
    };
 };
 
+class MongoDBDocumentDeleteError extends Error {
+   constructor({ id, modelName }) {
+      super();
+      this.statusCode = 400;
+      this.message = `${modelName} cannot be deleted.`;
+      this.name = 'Document cannot be deleted.';
+      this.value = `Job: ${id}`;
+   };
+};
+
 class MongoDBDocumentNotFoundError extends Error {
    constructor({ id, modelName }) {
       super();
@@ -51,6 +61,15 @@ class UniqueValueError extends Error {
    };
 };
 
+const mongoDBdocumentCannotDelete = (modelName) => {
+   return ({ id }) => {
+      return new MongoDBDocumentDeleteError({
+         id,
+         modelName,
+      });
+   };
+};
+
 const mongoDBdocumentNotFound = (modelName) => {
    return ({ id }) => {
       return new MongoDBDocumentNotFoundError({
@@ -60,7 +79,7 @@ const mongoDBdocumentNotFound = (modelName) => {
    };
 };
 
-// document not found errors
+// document not found
 export const archiveNotFound = mongoDBdocumentNotFound('Archive');
 export const contactNotFound = mongoDBdocumentNotFound('Contact');
 export const feeNotFound = mongoDBdocumentNotFound('Fee');
@@ -68,17 +87,26 @@ export const statusNotFound = mongoDBdocumentNotFound('Status');
 export const userNotFound = mongoDBdocumentNotFound('User');
 export const jobNotFound = mongoDBdocumentNotFound('Job');
 
+// document cannot be delete
+export const contactCannotBeDeleted = mongoDBdocumentCannotDelete('Contact');
+export const feeCannotBeDeleted = mongoDBdocumentCannotDelete('Fee');
+export const statusCannotBeDeleted = mongoDBdocumentCannotDelete('Status');
+export const userCannotBeDeleted = mongoDBdocumentCannotDelete('User');
+
 export const emailUnverified = ({ value }) => new AccessError({
    value,
    message: 'Email has not been verified.',
    path: 'email'
 });
+
 export const invalidCredentials = () => new AccessError({
    value: null,
    message: 'Wrong password.',
    path: 'password'
 });
+
 export const jwtInvalid = (errorName) => new AccessError({ message: 'Invalid authentication.', value: errorName });
+
 export const passwordsDoNotMatch = () => {
    return new InvalidValueError({
       message: 'Passwords do not match.',
@@ -86,6 +114,7 @@ export const passwordsDoNotMatch = () => {
       value: null
    })
 };
+
 export const passwordNotStrong = () => {
    return new InvalidValueError({
       message: 'Password is not strong.',
@@ -93,6 +122,7 @@ export const passwordNotStrong = () => {
       value: null
    })
 };
+
 export const valueRequired = ({ fieldName }) => {
    const field = fieldName.charAt(0).toUpperCase() + fieldName.substring(1).toLowerCase();
    return new InvalidValueError({
@@ -101,8 +131,11 @@ export const valueRequired = ({ fieldName }) => {
       value: null
    })
 };
+
 export const uploadAttachmentsLimitReached = () => new AttachmentError({ message: 'Too many files to upload', statusCode: 400 });
+
 export const uploadAttachment = () => new AttachmentError({ message: 'Error when trying to upload file(s).', statusCode: 500 });
+
 export const downloadAttachment = () => new AttachmentError({ message: 'Cannot download the attachment.', statusCode: 500 })
 
 export const reformatMongooseError = (err) => {
@@ -143,17 +176,21 @@ export const reformatMongooseError = (err) => {
 export default {
    archiveNotFound,
    contactNotFound,
+   contactCannotBeDeleted,
+   downloadAttachment,
+   feeCannotBeDeleted,
    feeNotFound,
-   statusNotFound,
-   userNotFound,
-   jobNotFound,
    emailUnverified,
    invalidCredentials,
+   jobNotFound,
    jwtInvalid,
    passwordsDoNotMatch,
    passwordNotStrong,
+   statusCannotBeDeleted,
+   statusNotFound,
    uploadAttachmentsLimitReached,
+   userNotFound,
+   userCannotBeDeleted,
    uploadAttachment,
-   downloadAttachment,
    valueRequired
 };

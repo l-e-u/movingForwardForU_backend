@@ -1,4 +1,5 @@
 import Status from '../models/status.js';
+import Job from '../models/job.js';
 
 // utilities
 import MyErrors from '../utils/errorUtils.js';
@@ -47,6 +48,10 @@ const deleteStatus = async (req, res, next) => {
    const { id } = req.params;
 
    try {
+      // before a status can be deleted, ensure that there aren't any jobs using this status
+      const job = await Job.findOne({ status: id });
+      if (job) throw MyErrors.statusCannotBeDeleted({ id });
+
       const status = await Status.findByIdAndDelete({ _id: id });
       if (!status) throw MyErrors.statusNotFound({ id });
 

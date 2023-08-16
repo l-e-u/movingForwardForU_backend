@@ -5,7 +5,7 @@ import Job from '../models/job.js';
 import MyErrors from '../utils/errorUtils.js';
 import { deleteAttachments, referenceUploadedFilesToAttachments } from '../utils/attachmentUtils.js';
 import { referenceNewlyUploadedFilesToNoteAttachments } from '../utils/attachmentUtils.js';
-import { applyFiltersToQuery } from '../utils/mongooseUtils.js';
+import { applyFiltersToQuery } from '../utils/mongoDBQueryUtils.js';
 
 const docFieldsToPopulate = [
    'billing.fee',

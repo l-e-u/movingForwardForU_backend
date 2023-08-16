@@ -1,4 +1,6 @@
+// models
 import Contact from '../models/contact.js';
+import Job from '../models/job.js';
 
 // utilities
 import MyErrors from '../utils/errorUtils.js';
@@ -42,11 +44,15 @@ const createContact = async (req, res, next) => {
    catch (error) { next(error) };
 };
 
-// delete a workout
+// delete a contact
 const deleteContact = async (req, res, next) => {
    const { id } = req.params;
 
    try {
+      // before a contact can be deleted, ensure that there aren't any jobs using this contact
+      const job = await Job.findOne({ customer: id });
+      if (job) throw MyErrors.contactCannotBeDeleted({ id });
+
       const contact = await Contact.findByIdAndDelete({ _id: id });
       if (!contact) throw MyErrors.contactNotFound({ id });
 
@@ -55,7 +61,7 @@ const deleteContact = async (req, res, next) => {
    catch (error) { next(error) };
 };
 
-// update a workout
+// update a contact
 const updateContact = async (req, res, next) => {
    const { id } = req.params;
 

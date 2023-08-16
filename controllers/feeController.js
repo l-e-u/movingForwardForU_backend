@@ -1,4 +1,5 @@
 import Fee from '../models/fee.js';
+import Job from '../models/job.js';
 
 // utilities
 import MyErrors from '../utils/errorUtils.js';
@@ -42,7 +43,11 @@ const deleteFee = async (req, res, next) => {
    const { id } = req.params;
 
    try {
-      const fee = await Fee.findByIdAndDelete({ _id: id });
+      const job = await Job.findOne({ billing: { $elemMatch: { fee: id } } });
+      if (job) throw MyErrors.feeCannotBeDeleted({ id });
+
+      // const fee = await Fee.findByIdAndDelete({ _id: id });
+      const fee = await Fee.findById({ _id: id });
       if (!fee) throw MyErrors.feeNotFound({ id });
 
       res.status(200).json(fee);
