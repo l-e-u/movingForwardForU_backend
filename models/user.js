@@ -31,7 +31,10 @@ const userSchema = new Schema({
       required: [true, 'Email is required.'],
       match: [/\S+@\S+\.\S+/, 'is invalid'],
    },
-   //Our password is hashed with bcrypt
+   inactivatedDate: {
+      type: Date,
+      default: null
+   },
    isActive: {
       type: Boolean,
       default: true
