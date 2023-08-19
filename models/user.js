@@ -69,6 +69,7 @@ const userSchema = new Schema({
 );
 
 userSchema.virtual('fullName').get(function () { return `${this.firstName} ${this.lastName}`; });
+userSchema.virtual('hasPassword').get(function () { return this.password !== null });
 
 userSchema.plugin(uniqueValidator);
 
@@ -118,8 +119,7 @@ const User = Model('User', userSchema);
 
 // updates user document password
 User.prototype.setEncryptedPassword = async function (newPassword) {
-   if (!validator.isStrongPassword(newPassword)) {
-      console.log("passed test", newPassword)
+   if (!validator.isStrongPassword(newPassword) || newPassword.includes(' ')) {
       return { error: true, passwordNotStrong: true };
    };
 

@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { requireAuth } from '../middleware/requireAuth.js';
 
 // controller functions
 import {
@@ -9,10 +8,13 @@ import {
    loginUser,
    registerUser,
    sendEmailResetPasswordLink,
+   setUserPassword,
    updateUser,
-   verifyEmailToken,
-   verifyUser,
 } from "../controllers/userController.js";
+
+// middleware
+import { decodeEmailToken } from '../middleware/decodeEmailToken.js';
+import { requireAuth } from '../middleware/requireAuth.js';
 
 const router = Router();
 
@@ -22,11 +24,9 @@ router.post('/login', loginUser);
 // send an email to user with link to reset password
 router.post('/resetPassword', sendEmailResetPasswordLink);
 
-// via the email service adding a new user to verify their email, or a resetting a forgotten password
-router.post('/verify/:emailToken/:resetPassword', verifyEmailToken);
+router.post('/verify', decodeEmailToken, updateUser);
 
-// flags user's email isVerified as true
-router.patch('/verify', verifyUser);
+router.patch('/setPassword', setUserPassword);
 
 // authenticates user is valid and logged in to access further end points
 router.use(requireAuth);

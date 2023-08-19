@@ -42,6 +42,7 @@ const loginUser = async (req, res, next) => {
             throw MyErrors.userNotFound({ id: email })
          };
 
+         if (!user.password) throw MyErrors.invalidCredentials();
          if (!user.isVerified) throw MyErrors.emailUnverified({ value: user.email });
 
          // authenticate by checking password
@@ -57,34 +58,7 @@ const loginUser = async (req, res, next) => {
    catch (error) { next(error) };
 };
 
-const verifyEmailToken = async (req, res, next) => {
-   const { emailToken, resetPassword } = req.params;
-
-   try {
-      const decodedToken = decodeJWT(emailToken);
-      const user = await User.findById(decodedToken);
-
-      if (!user) throw MyErrors.userNotFound({ id: decodedToken })
-
-      // resetting password sets it to null and user becomes unverified. front end will require them to set up password all over again
-      if (resetPassword === 'true') {
-         user.password = null;
-         user.isVerified = false;
-         await user.save();
-      }
-
-      // for new users who are clicking on the link in the email to verify their email address
-      if (user.password) {
-         user.isVerified = true;
-         await user.save();
-      };
-
-      return res.status(200).json(user);
-
-   } catch (error) { next(error) };
-};
-
-const verifyUser = async (req, res, next) => {
+const setUserPassword = async (req, res, next) => {
    let { _id, password, confirmPassword } = req.body;
 
    try {
@@ -101,9 +75,7 @@ const verifyUser = async (req, res, next) => {
       const result = await user.setEncryptedPassword(password);
 
       if (result.passwordNotStrong) throw MyErrors.passwordNotStrong();
-      user.isVerified = true;
       await user.save();
-
       return res.status(200).json(user);
    }
    catch (error) {
@@ -177,7 +149,7 @@ const sendEmailResetPasswordLink = async (req, res, next) => {
          return res.status(200).json({});
       };
 
-      const token = createJWT({ _id: user._id }, '1h');
+      const token = createJWT({ _id: user._id, resetPassword: true }, '1h');
 
       const emailSent = await sendResetPasswordLink({
          firstName: user.firstName,
@@ -216,7 +188,7 @@ const updateUser = async (req, res, next) => {
          user.isVerified = false;
          await user.save();
 
-         const token = createJWT({ id: user._id }, '1hr')
+         const token = createJWT({ id: user._id, resetPassword: false }, '1hr')
 
          await sendVerifyEmailRequest({ firstName: user.firstName, email, token });
       };
@@ -233,7 +205,6 @@ export {
    loginUser,
    registerUser,
    sendEmailResetPasswordLink,
+   setUserPassword,
    updateUser,
-   verifyUser,
-   verifyEmailToken
 };
