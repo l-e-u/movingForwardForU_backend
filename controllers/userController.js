@@ -1,4 +1,5 @@
 import User from "../models/user.js";
+import Job from '../models/job.js';
 
 // services
 import { sendResetPasswordLink, sendVerifyEmailRequest } from '../services/email.js';
@@ -126,6 +127,23 @@ const deleteUser = async (req, res, next) => {
    const { id } = req.params;
 
    try {
+      // before deleting a user, check if the user is referenced in any jobs as a driver or any note entries as a 'createdBy'
+      const job = await Job.findOne({
+         $or: [
+            { drivers: id },
+            {
+               notes: {
+                  $elemMatch: {
+                     createdBy: id
+                  }
+               }
+            }
+         ]
+      });
+
+      // if a referenced job is found, cannot delete this user
+      if (job) throw MyErrors.userCannotBeDeleted({ id });
+
       const user = await User.findByIdAndDelete({ _id: id });
       if (!user) throw MyErrors.userNotFound({ id });
 

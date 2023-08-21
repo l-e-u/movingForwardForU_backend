@@ -35,7 +35,7 @@ export const referenceNewlyUploadedFilesToNoteAttachments = ({ notes, files }) =
    });
 };
 
-export const deleteAttachments = async (files) => {
+export const deleteAttachments = async (files = []) => {
    let gfs;
    const conn = new mongoose.createConnection(process.env.MONGO_URI);
 

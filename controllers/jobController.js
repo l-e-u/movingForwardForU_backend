@@ -50,9 +50,10 @@ const getJob = async (req, res, next) => {
 
 // create new job
 const createJob = async (req, res, next) => {
-   const newJob = JSON.parse(req.body.job);
-
    try {
+
+      const newJob = JSON.parse(req.body.job);
+
       // only executes if there is a note
       referenceUploadedFilesToAttachments({
          attachments: newJob.notes[0]?.attachments || [],
@@ -69,7 +70,11 @@ const createJob = async (req, res, next) => {
 
       return res.status(200).json(job);
    }
-   catch (error) { next(error) };
+   catch (error) {
+      console.info('An error has occured, any uploaded files will be deleted.');
+      deleteAttachments(req.files);
+      next(error);
+   };
 };
 
 // delete a job
@@ -90,11 +95,12 @@ const deleteJob = async (req, res, next) => {
 
 // update a job
 const updateJob = async (req, res, next) => {
-   const { id } = req.params;
-   const updates = JSON.parse(req.body.updates);
-   const filesToDelete = JSON.parse(req.body.filesToDelete);
-
    try {
+
+      const { id } = req.params;
+      const updates = JSON.parse(req.body.updates);
+      const filesToDelete = JSON.parse(req.body.filesToDelete);
+
       if (updates.notes) {
          referenceNewlyUploadedFilesToNoteAttachments({
             notes: updates.notes,
@@ -125,7 +131,11 @@ const updateJob = async (req, res, next) => {
 
       return res.status(200).json(job);
    }
-   catch (error) { next(error) };
+   catch (error) {
+      console.info('An error has occured, any uploaded files will be deleted.');
+      deleteAttachments(req.files);
+      next(error);
+   };
 };
 
 export { createJob, getJob, getJobs, deleteJob, updateJob };
