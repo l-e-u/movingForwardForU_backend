@@ -28,7 +28,8 @@ const getJobs = async (req, res, next) => {
          .populate(docFieldsToPopulate)
          .sort({ createdAt: -1 });
 
-      req.body.list = jobs;
+      // for pagination
+      req.body.results = jobs;
 
       next();
    }

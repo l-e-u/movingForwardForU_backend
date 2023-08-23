@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { createContact, getContact, getContacts, deleteContact, updateContact } from '../controllers/contactController.js'
+
+// middleware
 import { requireAuth } from '../middleware/requireAuth.js';
+import { paginate } from '../middleware/paginate.js';
 
 const router = Router()
 
@@ -8,7 +11,7 @@ const router = Router()
 router.use(requireAuth);
 
 // GET all contacts
-router.get('/', getContacts);
+router.get('/', getContacts, paginate);
 
 // GET a single contact
 router.get('/:id', getContact);

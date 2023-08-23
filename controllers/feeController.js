@@ -46,8 +46,7 @@ const deleteFee = async (req, res, next) => {
       const job = await Job.findOne({ billing: { $elemMatch: { fee: id } } });
       if (job) throw MyErrors.feeCannotBeDeleted({ id });
 
-      // const fee = await Fee.findByIdAndDelete({ _id: id });
-      const fee = await Fee.findById({ _id: id });
+      const fee = await Fee.findByIdAndDelete({ _id: id });
       if (!fee) throw MyErrors.feeNotFound({ id });
 
       res.status(200).json(fee);

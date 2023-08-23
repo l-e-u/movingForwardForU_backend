@@ -15,7 +15,10 @@ const getContacts = async (req, res, next) => {
    try {
       const contacts = await Contact.find({}).populate(subDocumentsToPopulate).sort({ organization: 1 });
 
-      return res.status(200).json(contacts);
+      // for pagination
+      req.body.results = contacts;
+
+      next();
    }
    catch (error) { next(error) };
 };
