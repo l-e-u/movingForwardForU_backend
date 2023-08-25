@@ -1,9 +1,21 @@
 // accepts a mongooseQuery, and user-defined filters, per filter, apply to the query, execute the query and return the filtered query results
 export const applyFiltersToQuery = ({ filters, query }) => {
+   // boolean
+   if (filters.isArchived) query.find({ isArchived: filters.isArchived === 'true' ? true : false });
+
    // includes
    if (filters.drivers) query.find({ drivers: { $in: filters.drivers.split(',') } });
    if (filters.status) query.find({ status: { $in: filters.status.split(',') } });
    if (filters.customer) query.find({ customer: { $in: filters.customer.split(',') } });
+   if (filters.billing) query.find({
+      billing: {
+         $elemMatch: {
+            fee: {
+               $in: filters.billing.split(',')
+            }
+         }
+      }
+   });
 
    // regex
    if (filters.reference) query.find({ reference: { $regex: filters.reference, $options: 'i' } },);
@@ -13,12 +25,7 @@ export const applyFiltersToQuery = ({ filters, query }) => {
       query.find({
          notes: {
             $elemMatch: {
-               $or: [{
-                  subject: { $regex: userInput, $options: 'i' }
-               },
-               {
-                  message: { $regex: userInput, $options: 'i' }
-               }]
+               message: { $regex: userInput, $options: 'i' }
             }
          }
       });

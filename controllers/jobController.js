@@ -17,7 +17,9 @@ const docFieldsToPopulate = [
 ];
 
 const getJobs = async (req, res, next) => {
-   const filters = req.query || {};
+   const filters = req.query;
+
+   console.log(filters);
 
    try {
       // build the query by applying filters, then return filtered results

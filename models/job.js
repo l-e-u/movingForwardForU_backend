@@ -52,6 +52,7 @@ const jobSchema = new Schema(
       mileage: Number,
       notes: [noteSchema],
       pickup: transportSchema,
+      archivedOn: Date,
       billing: [{
          fee: {
             ref: 'Fee',
@@ -76,6 +77,10 @@ const jobSchema = new Schema(
          ref: 'User',
          type: Schema.Types.ObjectId,
       }],
+      isArchived: {
+         default: false,
+         type: Boolean
+      },
       parcel: {
          set: i => !i ? null : i,
          trim: true,
