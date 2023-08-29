@@ -28,7 +28,7 @@ const getJobs = async (req, res, next) => {
          query: Job.find({})
       })
          .populate(docFieldsToPopulate)
-         .sort({ createdAt: -1 });
+         .sort({ createdAt: -1 })
 
       // for pagination
       req.body.results = jobs;

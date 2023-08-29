@@ -1,12 +1,11 @@
 import mongoose from 'mongoose';
 
 // utilities
-import { deleteAttachments } from '../utils/attachmentUtils.js';
 import { reformatMongooseError } from '../utils/errorUtils.js';
 
-export const errorHandler = (err, req, res, next) => {
+export const errorHandler = (err, req, res) => {
    const error = err instanceof mongoose.Error ? reformatMongooseError(err) : err;
-   let { statusCode } = error;
+   const { statusCode } = error;
 
    console.info(`
    <<-- ERROR -->>
@@ -17,11 +16,11 @@ export const errorHandler = (err, req, res, next) => {
    Value: ${error.value}
    `);
 
-   console.error(error);
+   console.error('Error Handled:', error);
 
    // this is for unhandled exceptions, check console for details
    if (!statusCode) {
-      statusCode = 500;
+      error.statusCode = 500;
       error.message = 'An unknown error has occured.'
    };
 
