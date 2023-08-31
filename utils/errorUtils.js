@@ -93,6 +93,8 @@ export const feeCannotBeDeleted = mongoDBdocumentCannotDelete('Fee');
 export const statusCannotBeDeleted = mongoDBdocumentCannotDelete('Status');
 export const userCannotBeDeleted = mongoDBdocumentCannotDelete('User');
 
+export const accessDenied = () => new AccessError({ message: 'Access denied.', value: 'Not logged in.' });
+
 export const emailUnverified = ({ value }) => new AccessError({
    value,
    message: 'Email has not been verified.',
@@ -174,6 +176,7 @@ export const reformatMongooseError = (err) => {
 };
 
 export default {
+   accessDenied,
    archiveNotFound,
    contactNotFound,
    contactCannotBeDeleted,

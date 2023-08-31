@@ -13,7 +13,6 @@ import { requireAuth } from '../middleware/requireAuth.js';
 import { uploadAttachments } from '../middleware/uploadAttachments.js';
 import { paginate } from '../middleware/paginate.js';
 
-
 // debugging seeding
 // import User from '../models/user.js';
 // import Contact from '../models/contact.js';
@@ -69,7 +68,24 @@ const router = Router();
 router.use(requireAuth);
 
 // GET all jobs
-router.get('/', getJobs, paginate);
+router.get('/', (req, res, next) => {
+   req.query.isArchived = false;
+
+   next();
+}, getJobs, paginate);
+
+router.get('/driver', (req, res, next) => {
+   req.query.drivers = req.user._id.toString();
+   req.query.isArchived = false;
+
+   next();
+}, getJobs, paginate);
+
+router.get('/archived', (req, res, next) => {
+   req.query.isArchived = true;
+
+   next();
+}, getJobs, paginate);
 
 // GET a single job
 router.get('/:id', getJob);

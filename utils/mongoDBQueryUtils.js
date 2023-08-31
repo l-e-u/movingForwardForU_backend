@@ -4,7 +4,7 @@ import _ from 'lodash';
 export const applyFiltersToQuery = ({ filters, query }) => {
    try {
       // boolean
-      if (filters.isArchived) query.find({ isArchived: filters.isArchived === 'true' ? true : false });
+      if (filters.isArchived) query.find({ isArchived: filters.isArchived });
 
       // includes
       if (filters.drivers) query.find({ drivers: { $in: filters.drivers.split(',') } });
@@ -21,7 +21,8 @@ export const applyFiltersToQuery = ({ filters, query }) => {
       });
 
       // regex
-      if (filters.reference) query.find({ reference: { $regex: _.escapeRegExp(filters.reference), $options: 'i' } },);
+      if (filters.organization) query.find({ organization: { $regex: filters.organization, $options: 'i' } });
+      if (filters.reference) query.find({ reference: new RegExp(_.escapeRegExp(filters.reference), 'i') },);
       if (filters.notes) {
          const userInput = filters.notes;
 

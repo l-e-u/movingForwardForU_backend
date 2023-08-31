@@ -3,6 +3,7 @@ import Contact from '../models/contact.js';
 import Job from '../models/job.js';
 
 // utilities
+import { applyFiltersToQuery } from '../utils/mongoDBQueryUtils.js';
 import MyErrors from '../utils/errorUtils.js';
 
 const subDocumentsToPopulate = [
@@ -13,7 +14,15 @@ const subDocumentsToPopulate = [
 // get all contacts
 const getContacts = async (req, res, next) => {
    try {
-      const contacts = await Contact.find({}).populate(subDocumentsToPopulate).sort({ organization: 1 });
+      const filters = req.query;
+      console.log(filters)
+
+      const contacts = await applyFiltersToQuery({
+         filters,
+         query: Contact.find({})
+      })
+         .populate(subDocumentsToPopulate)
+         .sort({ organization: 1 });
 
       // for pagination
       req.body.results = contacts;
