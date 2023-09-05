@@ -49,7 +49,7 @@ const deleteStatus = async (req, res, next) => {
 
    try {
       // before a status can be deleted, ensure that there aren't any jobs using this status
-      const job = await Job.findOne({ status: id });
+      const job = await Job.findOne({ status: id, isArchived: false });
       if (job) throw MyErrors.statusCannotBeDeleted({ id });
 
       const status = await Status.findByIdAndDelete({ _id: id });
@@ -57,7 +57,9 @@ const deleteStatus = async (req, res, next) => {
 
       res.status(200).json(status);
    }
-   catch (error) { next(error) }
+   catch (error) {
+      next(error);
+   };
 };
 
 // update a status

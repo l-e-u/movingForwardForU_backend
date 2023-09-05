@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 // utilities
 import { reformatMongooseError } from '../utils/errorUtils.js';
 
-export const errorHandler = (err, req, res) => {
+export const errorHandler = (err, req, res, next) => {
    const error = err instanceof mongoose.Error ? reformatMongooseError(err) : err;
    const { statusCode } = error;
 
@@ -15,8 +15,6 @@ export const errorHandler = (err, req, res) => {
    Path: ${error.path}
    Value: ${error.value}
    `);
-
-   console.error('Error Handled:', error);
 
    // this is for unhandled exceptions, check console for details
    if (!statusCode) {

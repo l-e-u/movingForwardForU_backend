@@ -4,7 +4,7 @@ import _ from 'lodash';
 export const applyFiltersToQuery = ({ filters, query }) => {
    try {
       // boolean
-      if (filters.isArchived) query.find({ isArchived: filters.isArchived });
+      if (filters.hasOwnProperty('isArchived')) query.find({ isArchived: filters.isArchived });
 
       // includes
       if (filters.drivers) query.find({ drivers: { $in: filters.drivers.split(',') } });
@@ -46,6 +46,10 @@ export const applyFiltersToQuery = ({ filters, query }) => {
       // delivery date: greater than or equal to / less than or equal to
       if (filters.deliveryGTE) query.find({ 'delivery.date': { $gte: filters.deliveryGTE } });
       if (filters.deliveryLTE) query.find({ 'delivery.date': { $lte: filters.deliveryLTE } });
+
+      // archived on: greater than or equal to  / less than or equal to
+      if (filters.archivedOnGTE) query.find({ 'archive.date': { $gte: filters.archivedOnGTE } });
+      if (filters.archivedOnLTE) query.find({ 'archive.date': { $lte: filters.archivedOnLTE } });
 
       // created on: greater than or equal to / less than or equal to
       if (filters.createdOnGTE) query.find({ createdAt: { $gte: filters.createdOnGTE } });

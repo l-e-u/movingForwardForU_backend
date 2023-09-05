@@ -46,7 +46,9 @@ const getJob = async (req, res, next) => {
       const job = await Job.findById(id).populate(docFieldsToPopulate);
       if (!job) throw MyErrors.jobNotFound({ id });
 
-      res.status(200).json(job);
+      req.job = job;
+
+      next();
    }
    catch (error) { next(error) };
 };
@@ -101,26 +103,25 @@ const updateJob = async (req, res, next) => {
    try {
 
       const { id } = req.params;
-      const updates = JSON.parse(req.body.updates);
-      const filesToDelete = JSON.parse(req.body.filesToDelete);
+      const { driverNote, filesToDelete, notes } = req.body;
 
-      if (updates.notes) {
+      if (notes) {
          referenceNewlyUploadedFilesToNoteAttachments({
-            notes: updates.notes,
+            notes,
             files: req.files
          });
       };
 
       // a single note from the driver only needs to have the note pushed since they can only add one note at a time
-      if (updates.driverNote) {
-         updates.$push = { notes: updates.notes[0] };
-         delete updates.notes;
-         delete updates.driverNote;
+      if (driverNote) {
+         req.body.$push = { notes: notes[0] };
+         delete req.body.notes;
+         delete req.body.driverNote;
       };
 
       const job = await Job.findByIdAndUpdate(
          { _id: id },
-         { ...updates },
+         { ...req.body },
          {
             returnDocument: 'after',
             runValidators: true
@@ -130,7 +131,7 @@ const updateJob = async (req, res, next) => {
       if (!job) MyErrors.jobNotFound({ id });
 
       // once the document has been updated, delete the old attachments of the notes that were removed
-      deleteAttachments(filesToDelete);
+      if (filesToDelete) deleteAttachments(filesToDelete);
 
       return res.status(200).json(job);
    }

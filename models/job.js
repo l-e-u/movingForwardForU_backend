@@ -18,6 +18,9 @@ const transportSchema = new Schema({
 
 const noteSchema = new Schema(
    {
+      archive: {
+         createdBy: String,
+      },
       attachments: {
          default: [],
          type: Array,
@@ -52,7 +55,14 @@ const jobSchema = new Schema(
       mileage: Number,
       notes: [noteSchema],
       pickup: transportSchema,
-      archivedOn: Date,
+      archive: {
+         billing: Array,
+         createdBy: String,
+         customer: String,
+         date: Date,
+         drivers: Array,
+         status: String,
+      },
       billing: [{
          fee: {
             ref: 'Fee',
