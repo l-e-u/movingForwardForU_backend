@@ -4,8 +4,6 @@ import bcrypt from 'bcrypt';
 import validator from 'validator';
 
 const userSchema = new Schema({
-
-   password: String,
    avatar: String,
    address: String,
    firstName: {
@@ -51,6 +49,10 @@ const userSchema = new Schema({
       type: String,
       trim: true,
       required: [true, 'Last Name is required.']
+   },
+   password: {
+      default: null,
+      type: String,
    },
    roles: [{
       type: String,
