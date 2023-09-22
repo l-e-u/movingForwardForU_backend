@@ -24,7 +24,7 @@ router.post('/login', loginUser);
 // send an email to user with link to reset password
 router.post('/resetPassword', sendEmailResetPasswordLink);
 
-router.post('/verify', decodeEmailToken, updateUser);
+router.post('/verify/:token', decodeEmailToken, updateUser);
 
 router.patch('/setPassword', setUserPassword);
 
